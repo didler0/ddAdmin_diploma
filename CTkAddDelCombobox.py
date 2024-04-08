@@ -163,3 +163,6 @@ class ComboBoxWithButtons(customtkinter.CTkFrame):
         self.combobox.set("")  # Очистить текущий выбор
         self.update()
 
+    def clear_data(self):
+        self.combobox.set("")
+
