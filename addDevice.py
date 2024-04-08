@@ -3,6 +3,7 @@ import tkinter
 import re
 from dataBase import *
 from CTkMessagebox import CTkMessagebox
+import CTkAddDelCombobox
 from hPyT import *
 
 customtkinter.set_appearance_mode("Dark")
@@ -11,92 +12,86 @@ customtkinter.set_default_color_theme("blue")
 db_manager = DatabaseManager('DDLAPTOP\\SQLEXPRESS', 'PCC')
 
 
-def switch_event(switch_var):
-    print("switch toggled, current value:", switch_var.get())
-
 
 class AddDevice_(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.type_device = None
         self.tabview = None
-        self.widgetsDescription = []
-        self.create_widgets()
-        maximize_minimize_button.hide(self)
+        self.widgetsBasic = []
+        self.widgetsDetail = []
+        self.widgetsComponents = []
+        self.create_window()
+        # maximize_minimize_button.hide(self)
 
-    def create_widgets(self):
+    def create_window(self):
         self.title("Add Computer")
         self.geometry("600x595")
-        self.minsize(495, 635)
-        self.maxsize(495, 635)
 
+        labels_basic = ["IP Адрес", "Название", "Сетевое имя", "Тип устройства", "Место установки", "Описание",
+                        "Материально ответственный", "Филиал", "Структурное подразделение"]
+        self.widgetsBasic = []
+        labels_detail = ["Инвентарный №", "Серийный №", "MAC - адрес", "Операционная система", "Год покупки", "Месяцы гарантии"]
+        self.widgetsDetail = []
+        labels_components = ["Процессор", "ОЗУ", "Материнская плата", "Видеокарта", "Блок питания", "Сетевая карта", "Куллер", "Корпус", "HDD", "SSD",
+                             "Монитор", "Клавиатура", "Мышь", "Аудио"]
+        self.widgetsComponents = []
+
+        self.grid_columnconfigure(0, weight=1)
         self.frame = customtkinter.CTkScrollableFrame(self, height=520)
-        self.frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew", columnspan=4)
-        self.columnconfigure((0, 1, 2), weight=0)
-        self.frame.rowconfigure(0, weight=1)
-        self.tabview = customtkinter.CTkTabview(master=self.frame)
-        self.tabview.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        self.frame.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+
+        self.tabview = customtkinter.CTkTabview(master=self.frame, height=515, width=550)
+        self.tabview.pack()
 
         self.tabview.add("Базовая информация")
+        self.create_basic_info_tab(labels_basic)
         self.tabview.add("Детальное описание")
+        self.create_detail_info_tab(labels_detail)
         self.tabview.add("Компоненты")
+        self.create_components_info_tab(labels_components)
 
-        # Define labels and corresponding widgets
-        labels_text_ru = ["IP Адрес", "Название", "Сетевое имя", "Тип устройства", "Место установки", "Описание",
-                          "Материально ответственный", "Филиал", "Структурное подразделение"]
-
-        for i, text in enumerate(labels_text_ru):
+    def create_basic_info_tab(self, labels_basic):
+        self.tabview.tab("Базовая информация").grid_columnconfigure(1,weight=1)
+        for i, text in enumerate(labels_basic):
             label = customtkinter.CTkLabel(master=self.tabview.tab("Базовая информация"), text=text, font=("Arial", 12))
             label.grid(row=i, column=0, padx=10, pady=10, sticky="ew")
 
-            widget = None
-            if text in ["IP Адрес", "Сетевое имя"]:
-                widget = customtkinter.CTkEntry(master=self.tabview.tab("Базовая информация"), placeholder_text=text)
+            if text == "IP Адрес":
+                entry = customtkinter.CTkEntry(master=self.tabview.tab("Базовая информация"), placeholder_text="IP Адрес")
+                entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
+                self.widgetsBasic.append(entry)
+            elif text == "Сетевое имя":
+                entry = customtkinter.CTkEntry(master=self.tabview.tab("Базовая информация"), placeholder_text="Сетевое имя")
+                entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
+                self.widgetsBasic.append(entry)
             elif text == "Тип устройства":
-                widget = customtkinter.CTkComboBox(master=self.tabview.tab("Базовая информация"), values=[" "], state="readonly")
-                self.FillComboBox(widget, db_manager.get_data("type_of_device", "*", ""))
+                data = db_manager.get_data("type_of_device", "name", "")
+                data = [str(row[0]) for row in data]
+                type_of_device = CTkAddDelCombobox.ComboBoxWithButtons(table="type_of_device",master=self.tabview.tab("Базовая информация"),values=data)
+                type_of_device.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
+                self.widgetsBasic.append(type_of_device)
+            elif text == "Филиал":
+                data = db_manager.get_data("branch_office", "name", "")
+                data = [str(row[0]) for row in data]
+                branch_office = CTkAddDelCombobox.ComboBoxWithButtons(table="branch_office",master=self.tabview.tab("Базовая информация"),values=data)
+                branch_office.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
+                self.widgetsBasic.append(branch_office)
+            elif text == "Структурное подразделение":
+                data = db_manager.get_data("structural_unit", "name", "")
+                data = [str(row[0]) for row in data]
+                structural_unit = CTkAddDelCombobox.ComboBoxWithButtons(table="structural_unit",master=self.tabview.tab("Базовая информация"), values=data)
+                structural_unit.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
+                self.widgetsBasic.append(structural_unit)
             else:
-                widget = customtkinter.CTkTextbox(master=self.tabview.tab("Базовая информация"), height=50)
+                textBox = customtkinter.CTkTextbox(master=self.tabview.tab("Базовая информация"), height=90)
+                textBox.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
+                self.widgetsBasic.append(textBox)
 
-            widget.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
-            self.widgetsDescription.append(widget)
+    def create_detail_info_tab(self, labels_detail):
+        pass
 
-        # Add type of device entry and buttons
-        customtkinter.CTkLabel(master=self, text="Добавить тип устройства").grid(row=2, column=0, pady=5, padx=10,
-                                                                                 sticky="ew")
-        type_device = customtkinter.CTkEntry(master=self, placeholder_text="Тип устройства")
-        type_device.grid(row=2, column=1, pady=5, padx=10, sticky="ew")
-
-        customtkinter.CTkButton(master=self, text="+", command=lambda: self.add_type_of_device(type_device,self.widgetsDescription)).grid(row=2, column=3, pady=5,
-                                                                                                                  padx=10, sticky="ew")
-        customtkinter.CTkButton(master=self, text="Добавить", command=lambda: self.AddPcAll()).grid(row=3, column=0,
-                                                                                                    columnspan=4, pady=5,
-                                                                                                    padx=10, sticky="ew")
-
-    def FillComboBox(self, combobox1, ToComboBoxOne):
-        if not ToComboBoxOne:
-            # Если список пуст, установите пустое значение в combobox
-            combobox1.configure(values=[" "])
-            return
-        data = [str(data[1]) for data in ToComboBoxOne]
-        combobox1.configure(values=data)
-        self.update()
-
-    def add_type_of_device(self, entry, widgetsDescription):
-        data = entry.get()
-        print(data)
-        for widget in widgetsDescription:
-            if isinstance(widget, customtkinter.CTkComboBox) and data!=None:
-                self.FillComboBox(widget, db_manager.get_data("type_of_device", "*", ""))
-                widget.delete(0,customtkinter.END)
-                db_manager.insert_data("type_of_device", "[name]", f"'{data}'")
-                CTkMessagebox(title="Успех",message="Новый тип устройства успешно добавлен!",icon="check", option_1="Ok")
-                self.update()
-            else:
-                CTkMessagebox(title="Ошибка", message="Ошибка.", icon="cancel")
-                return
-    #из вс кода экзмпле там из него изобрести велосипед и будет классно
-
+    def create_components_info_tab(self, labels_components):
+        pass
 
 
 if __name__ == "__main__":
