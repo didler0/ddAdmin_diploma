@@ -173,42 +173,35 @@ class AddDevice_(customtkinter.CTkToplevel):
         self.clear_data_from_section(self.widgetsComponents)
 
     def add_whole_data_to_bd(self):
-        try:
-            # Получение данных
-            values_component = self.get_data_from_components()
-            values_details = self.get_data_from_details()
-            values_basic = self.get_data_from_basic()
+        # Получение данных
+        values_component = self.get_data_from_components()
+        values_details = self.get_data_from_details()
+        values_basic = self.get_data_from_basic()
 
-            # Вставка данных в таблицу basic_info
-            columns_basic = "ip, name, network_name, type_of_device_id, place_of_installation_id, description, " \
-                            "material_resp_person, last_status, data_status, last_repair, detail_info_id, " \
-                            "branch_id, structural_unit_id"
-            if db_manager.insert_data("basic_info", columns_basic, values_basic):
-                print("Data inserted into basic_info successfully.")
+        # Список кортежей, где каждый кортеж представляет столбец, который нужно обновить, и соответствующую таблицу
+        columns_to_update = [
+            (3, "type_of_device", "id", values_basic),
+            (7, "branch_office", "id", values_basic),
+            (8, "structural_unit", "id", values_basic)
+        ]
+
+        # Обновление значений в values_basic
+        for index, table, column, values in columns_to_update:
+            value = values[index]  # Значение, которое нужно заменить на id
+            id_result = db_manager.get_data(table, "id", f"name = '{value}'")
+            if id_result:
+                values[index] = id_result[0][0]  # Обновляем значение на id из таблицы
             else:
-                print("Failed to insert data into basic_info.")
+                print(f"Could not find id for {table} with name '{value}'")
 
-            # Вставка данных в таблицу detail_info
-            columns_detail = "component_id, inventory_number, serial_number, mac_address, oper_system, " \
-                             "year_of_purchase, month_of_warranty"
-            if db_manager.insert_data("detail_info", columns_detail, values_details):
-                print("Data inserted into detail_info successfully.")
-            else:
-                print("Failed to insert data into detail_info.")
+        #сначала компоненты добавляем, потом детейл и потом бейсик!!!
+        print(*values_basic)
+        print(*values_component)
+        qwe=db_manager.insert_data_component(*values_component)
+        print(db_manager.get_last_id("component"))
 
-            # Вставка данных в таблицу component
-            columns_component = "processor, ram, motherboard, gpu, psu, networkCard, cooler, chasis, " \
-                                "hdd, ssd, monitor, keyboard, mouse, audio"
-            if db_manager.insert_data("component", columns_component, values_component):
-                print("Data inserted into component successfully.")
-            else:
-                print("Failed to insert data into component.")
 
-            self.clear_whole_data()
-        except Exception as e:
-            print("An error occurred:", e)
-            # Откатываем все операции в случае возникновения ошибки
-            self.conn.rollback()
+
 
 
 if __name__ == "__main__":

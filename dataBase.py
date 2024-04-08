@@ -220,6 +220,61 @@ class DatabaseManager:
             self.conn.rollback()
             return False
 
+    def insert_data_basic_info(self, ip, name, network_name, type_of_device_id, place_of_installation_id,
+                               description, material_resp_person,
+                               detail_info_id, branch_id, structural_unit_id):
+        try:
+            query = f"INSERT INTO basic_info (ip, name, network_name, type_of_device_id, place_of_installation_id, " \
+                    f"description, material_resp_person, last_status, data_status, last_repair, detail_info_id, " \
+                    f"branch_id, structural_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            self.cur.execute(query, (ip, name, network_name, type_of_device_id, place_of_installation_id,
+                                     description, material_resp_person,
+                                     detail_info_id, branch_id, structural_unit_id))
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred:", e)
+            self.conn.rollback()
+            return False
+
+    def get_last_id(self,table):
+        try:
+            # Получаем последний добавленный идентификатор
+            self.cur.execute(f"SELECT IDENT_CURRENT('{table}')")
+            last_id = self.cur.fetchone()[0]
+            return last_id
+        except Exception as e:
+            print(f"Error retrieving last basic_info id: {str(e)}")
+            return None
+    def insert_data_detail_info(self, component_id, inventory_number, serial_number, mac_address, oper_system,
+                                year_of_purchase, month_of_warranty):
+        try:
+            query = f"INSERT INTO detail_info (component_id, inventory_number, serial_number, mac_address, oper_system, " \
+                    f"year_of_purchase, month_of_warranty) VALUES (?, ?, ?, ?, ?, ?, ?)"
+            self.cur.execute(query, (component_id, inventory_number, serial_number, mac_address, oper_system,
+                                     year_of_purchase, month_of_warranty))
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred:", e)
+            self.conn.rollback()
+            return False
+
+    def insert_data_component(self, processor, ram, motherboard, gpu, psu, networkCard, cooler, chasis,
+                              hdd, ssd, monitor, keyboard, mouse, audio):
+        try:
+            query = "INSERT INTO component (processor, ram, motherboard, gpu, psu, networkCard, cooler, chasis, " \
+                    "hdd, ssd, monitor, keyboard, mouse, audio) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            self.cur.execute(query, (processor, ram, motherboard, gpu, psu, networkCard, cooler, chasis,
+                                     hdd, ssd, monitor, keyboard, mouse, audio))
+            self.conn.commit()
+
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred:", e)
+            self.conn.rollback()
+            return False
+
     def get_unique_branch_struct(self):
         """
         Метод для получения уникальных пар филиалов и подразделений.
