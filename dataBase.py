@@ -52,6 +52,12 @@ class DatabaseManager:
                                                             id INT PRIMARY KEY IDENTITY(1,1),
                                                             name NVARCHAR(255) UNIQUE
                                                         )''')
+            # Создание таблицы material_resp_person
+            self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[material_resp_person]') AND type in (N'U'))
+                                                                    CREATE TABLE material_resp_person (
+                                                                        id INT PRIMARY KEY IDENTITY(1,1),
+                                                                        name NVARCHAR(255) UNIQUE
+                                                                    )''')
 
             # Создание таблицы component
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[component]') AND type in (N'U'))
@@ -97,7 +103,7 @@ class DatabaseManager:
                                     type_of_device_id INT,
                                     place_of_installation_id INT,
                                     description NVARCHAR(MAX),
-                                    material_resp_person NVARCHAR(MAX),
+                                    material_resp_person_id INT,
                                     last_status BIT,
                                     data_status DATE,
                                     last_repair DATE,
@@ -108,7 +114,8 @@ class DatabaseManager:
                                     FOREIGN KEY(branch_id) REFERENCES branch_office(id) ON DELETE CASCADE ON UPDATE CASCADE,
                                     FOREIGN KEY(structural_unit_id) REFERENCES structural_unit(id) ON DELETE CASCADE ON UPDATE CASCADE,
                                     FOREIGN KEY(type_of_device_id) REFERENCES type_of_device(id) ON DELETE CASCADE ON UPDATE CASCADE,
-                                    FOREIGN KEY(place_of_installation_id) REFERENCES place_of_installation(id) ON DELETE CASCADE ON UPDATE CASCADE
+                                    FOREIGN KEY(place_of_installation_id) REFERENCES place_of_installation(id) ON DELETE CASCADE ON UPDATE CASCADE,
+                                    FOREIGN KEY(material_resp_person_id) REFERENCES material_resp_person(id) ON DELETE CASCADE ON UPDATE CASCADE
                                 )''')
 
             # Создание таблицы repair
@@ -221,13 +228,13 @@ class DatabaseManager:
             return False
 
     def insert_data_basic_info(self, ip, name, network_name, type_of_device_id, place_of_installation_id,
-                               description, material_resp_person, branch_id, structural_unit_id,detail_info_id):
+                               description, material_resp_person_id, branch_id, structural_unit_id,detail_info_id):
         try:
             query = f"INSERT INTO basic_info (ip, name, network_name, type_of_device_id, place_of_installation_id, " \
-                    f"description, material_resp_person,detail_info_id, " \
+                    f"description, material_resp_person_id,detail_info_id, " \
                     f"branch_id, structural_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             self.cur.execute(query, (ip, name, network_name, type_of_device_id, place_of_installation_id,
-                                     description, material_resp_person,
+                                     description, material_resp_person_id,
                                      detail_info_id, branch_id, structural_unit_id))
             self.conn.commit()
             return True
@@ -283,10 +290,10 @@ class DatabaseManager:
         """
         try:
             query = '''
-                SELECT DISTINCT branch_office.name AS branch_name, structural_units.name AS structural_name
+                SELECT DISTINCT branch_office.name AS branch_name, structural_unit.name AS structural_name
                 FROM basic_info
                 JOIN branch_office ON basic_info.branch_id = branch_office.id
-                JOIN structural_units ON basic_info.structural_units_id = structural_units.id
+                JOIN structural_unit ON basic_info.structural_unit_id = structural_unit.id
             '''
             self.cur.execute(query)
             results = self.cur.fetchall()

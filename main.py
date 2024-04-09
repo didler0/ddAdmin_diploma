@@ -27,9 +27,8 @@ class UpperFrame(customtkinter.CTkFrame):
             {"text": "Добавить устройство", "command": self.AddPc},
             {"text": "Редактировать данные о устройствах", "command": self.EditPc},
             {"text": "Формирование отчетов", "command": self.ExportPc},
-            {"text": "Обновить", "command": self.ReloadData},
-            {"text": "Ремонты", "command": self.Repairs, "fg_color": "#FF8C19", "hover_color": "#4DFFFF",
-             "text_color": "black"}
+            {"text": "Обновить данные", "command": self.ReloadData},
+            {"text": "Ремонты", "command": self.Repairs, "fg_color": "#FF8C19", "hover_color": "#4DFFFF", "text_color": "black"}
         ]
 
         for idx, button_info in enumerate(button_data):
