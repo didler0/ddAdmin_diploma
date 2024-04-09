@@ -221,12 +221,11 @@ class DatabaseManager:
             return False
 
     def insert_data_basic_info(self, ip, name, network_name, type_of_device_id, place_of_installation_id,
-                               description, material_resp_person,
-                               detail_info_id, branch_id, structural_unit_id):
+                               description, material_resp_person, branch_id, structural_unit_id,detail_info_id):
         try:
             query = f"INSERT INTO basic_info (ip, name, network_name, type_of_device_id, place_of_installation_id, " \
-                    f"description, material_resp_person, last_status, data_status, last_repair, detail_info_id, " \
-                    f"branch_id, structural_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    f"description, material_resp_person,detail_info_id, " \
+                    f"branch_id, structural_unit_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             self.cur.execute(query, (ip, name, network_name, type_of_device_id, place_of_installation_id,
                                      description, material_resp_person,
                                      detail_info_id, branch_id, structural_unit_id))

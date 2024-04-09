@@ -62,6 +62,12 @@ class AddDevice_(customtkinter.CTkToplevel):
                 entry = customtkinter.CTkEntry(master=self.tabview.tab("Базовая информация"), placeholder_text="IP Адрес")
                 entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(entry)
+            elif text == "Место установки":
+                data = db_manager.get_data("place_of_installation", "name", "")
+                data = [str(row[0]) for row in data]
+                type_of_device = CTkAddDelCombobox.ComboBoxWithButtons(table="place_of_installation", master=self.tabview.tab("Базовая информация"), values=data)
+                type_of_device.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
+                self.widgetsBasic.append(type_of_device)
             elif text == "Сетевое имя":
                 entry = customtkinter.CTkEntry(master=self.tabview.tab("Базовая информация"), placeholder_text="Сетевое имя")
                 entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
@@ -173,35 +179,50 @@ class AddDevice_(customtkinter.CTkToplevel):
         self.clear_data_from_section(self.widgetsComponents)
 
     def add_whole_data_to_bd(self):
-        # Получение данных
-        values_component = self.get_data_from_components()
-        values_details = self.get_data_from_details()
-        values_basic = self.get_data_from_basic()
+        try:
+            # Получение данных
+            values_component = self.get_data_from_components()
+            values_details = self.get_data_from_details()
+            values_basic = self.get_data_from_basic()
 
-        # Список кортежей, где каждый кортеж представляет столбец, который нужно обновить, и соответствующую таблицу
-        columns_to_update = [
-            (3, "type_of_device", "id", values_basic),
-            (7, "branch_office", "id", values_basic),
-            (8, "structural_unit", "id", values_basic)
-        ]
+            # Список кортежей, где каждый кортеж представляет столбец, который нужно обновить, и соответствующую таблицу
+            columns_to_update = [
+                (3, "type_of_device", "id", values_basic),
+                (4, "place_of_installation", "id", values_basic),
+                (7, "branch_office", "id", values_basic),
+                (8, "structural_unit", "id", values_basic)
+            ]
 
-        # Обновление значений в values_basic
-        for index, table, column, values in columns_to_update:
-            value = values[index]  # Значение, которое нужно заменить на id
-            id_result = db_manager.get_data(table, "id", f"name = '{value}'")
-            if id_result:
-                values[index] = id_result[0][0]  # Обновляем значение на id из таблицы
-            else:
-                print(f"Could not find id for {table} with name '{value}'")
+            # Обновление значений в values_basic
+            for index, table, column, values in columns_to_update:
+                value = values[index]  # Значение, которое нужно заменить на id
+                id_result = db_manager.get_data(table, "id", f"name = '{value}'")
+                if id_result:
+                    values[index] = id_result[0][0]  # Обновляем значение на id из таблицы
+                else:
+                    print(f"Could not find id for {table} with name '{value}'")
 
-        #сначала компоненты добавляем, потом детейл и потом бейсик!!!
-        print(*values_basic)
-        print(*values_component)
-        qwe=db_manager.insert_data_component(*values_component)
-        print(db_manager.get_last_id("component"))
+            db_manager.insert_data_component(*values_component)
+            last_component_id = db_manager.get_last_id("component")
+            values_details.insert(0, last_component_id)
+            db_manager.insert_data_component(*values_component)
+            db_manager.insert_data_detail_info(*values_details)
+            last_details_id = db_manager.get_last_id("detail_info")
+            values_basic.append(last_details_id)
 
+            db_manager.insert_data_basic_info(*values_basic)
 
+            # Show success message box
+            CTkMessagebox(title="Успех",
+                          message="Компьютер успешно добавлен!\n Если была добавлена новое место расположения или был добавлен ПЕРВЫЙ компьютер - перезапустите приложение",
+                          icon="check", option_1="Ok")
 
+            print(db_manager.get_last_id("component"))
+
+        except Exception as e:
+            # Show error message box
+            CTkMessagebox(title="Ошибка", message="Ошибка при добавлении компьютера: " + str(e), icon="cancel")
+            print(f"An error occurred while adding computer: {e}")
 
 
 if __name__ == "__main__":
