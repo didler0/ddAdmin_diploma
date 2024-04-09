@@ -4,15 +4,12 @@ from dataBase import DatabaseManager
 from CTkMessagebox import CTkMessagebox
 import CTkAddDelCombobox
 
-
-
-# Инициализация менеджера базы данных
 db_manager = DatabaseManager('DDLAPTOP\\SQLEXPRESS', 'PCC')
 
 
-class AddDevice_(customtkinter.CTkToplevel):
+class EditDevice_(customtkinter.CTkToplevel):
     """
-    Класс для добавления нового устройства.
+    Класс для редактирования данных о устройствах.
 
     Attributes:
         tabview: Объект вкладок для отображения различных секций информации.
@@ -40,8 +37,9 @@ class AddDevice_(customtkinter.CTkToplevel):
         """
         Создание окна добавления компьютера.
         """
-        self.title("Добавление устройства")
-        self.geometry("600x595")
+        self.title("Редактирование устройства")
+        self.geometry("600x700")
+        self.minsize(600, 700)
 
         # Метки для базовой информации
         labels_basic = ["IP Адрес", "Название", "Сетевое имя", "Тип устройства", "Место установки", "Описание",
@@ -57,9 +55,9 @@ class AddDevice_(customtkinter.CTkToplevel):
                              "Куллер", "Корпус", "HDD", "SSD", "Монитор", "Клавиатура", "Мышь", "Аудио"]
         self.widgetsComponents = []
 
-        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
         self.frame = customtkinter.CTkScrollableFrame(self, height=520)
-        self.frame.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+        self.frame.grid(row=1, column=0, padx=10, pady=10, sticky='nsew', columnspan=2)
 
         self.tabview = customtkinter.CTkTabview(master=self.frame, height=515, width=550)
         self.tabview.pack()
@@ -72,10 +70,28 @@ class AddDevice_(customtkinter.CTkToplevel):
         self.tabview.add("Компоненты")
         self.create_components_info_tab(labels_components)
 
-        # Кнопка для добавления данных
-        add_data_button = customtkinter.CTkButton(master=self, text="Добавить", command=lambda: self.add_whole_data_to_bd())
-        add_data_button.grid(row=1, column=0, padx=10, pady=10, sticky='nsew')
+        # Кнопка для обновления данных
+        add_data_button = customtkinter.CTkButton(master=self, text="Обновить", command=lambda: self.add_whole_data_to_bd())
+        add_data_button.grid(row=2, column=0, padx=10, pady=10, sticky='nsew', columnspan=2)
 
+        # Кнопка для удаления данных
+        del_data_button = customtkinter.CTkButton(master=self, text="Удалить", hover_color="red", command=lambda: self.add_whole_data_to_bd())
+        del_data_button.grid(row=3, column=0, padx=10, pady=10, sticky='nsew', columnspan=2)
+        self.grid_rowconfigure(0, weight=0)
+
+        # Комбобокс для выбора устройства
+        combobox1 = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly", command=self.load_data)
+        combobox1.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        customtkinter.CTkLabel(master=self, text="Выберите устройство").grid(row=0, column=0, padx=10, pady=10)
+
+
+    def load_data(self, choice):
+        print(choice)
+
+    def FillComboBox(self,combobox,data_):
+        sasha = [str(data[0]) + " | " + str(data[1]) for data in data_]
+        self.combobox.configure(values=sasha)
+        self.update()
     def create_basic_info_tab(self, labels_basic):
         """
         Создание вкладки для базовой информации.
@@ -164,137 +180,8 @@ class AddDevice_(customtkinter.CTkToplevel):
             entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
             self.widgetsComponents.append(entry)
 
-    def get_data_from_components(self):
-        """
-        Получение данных из раздела компонентов.
-
-        Returns:
-            list: Список значений из раздела компонентов.
-        """
-        values_component = []
-        for widget in self.widgetsComponents:
-            if isinstance(widget, customtkinter.CTkEntry):
-                value = widget.get()
-                widget.delete(0, customtkinter.END)
-            else:
-                value = None
-            values_component.append(value)
-
-        return values_component
-
-    def get_data_from_details(self):
-        """
-        Получение данных из раздела деталей.
-
-        Returns:
-            list: Список значений из раздела деталей.
-        """
-        values_detail = []
-        for widget in self.widgetsDetail:
-            if isinstance(widget, customtkinter.CTkEntry):
-                value = widget.get()
-                widget.delete(0, customtkinter.END)
-            else:
-                value = None
-            values_detail.append(value)
-
-        return values_detail
-
-    def get_data_from_basic(self):
-        """
-        Получение данных из раздела базовой информации.
-
-        Returns:
-            list: Список значений из раздела базовой информации.
-        """
-        values_basic = []
-        for widget in self.widgetsBasic:
-            if isinstance(widget, customtkinter.CTkEntry):
-                value = widget.get()
-                widget.delete(0, customtkinter.END)
-            elif isinstance(widget, customtkinter.CTkTextbox):
-                value = widget.get("1.0", "end-1c")
-                widget.delete("1.0", "end-1c")
-            elif isinstance(widget, CTkAddDelCombobox.ComboBoxWithButtons):
-                value = widget.get_current_value()
-                widget.clear_data()
-            else:
-                value = None
-            values_basic.append(value)
-        return values_basic
-
-    def clear_data_from_section(self, widgets):
-        """
-        Очистка данных из секции на основе предоставленного списка виджетов.
-
-        Args:
-            widgets: Список виджетов.
-        """
-        for widget in widgets:
-            if isinstance(widget, customtkinter.CTkEntry):
-                widget.delete(0, customtkinter.END)
-            elif isinstance(widget, customtkinter.CTkTextbox):
-                widget.delete("1.0", "end-1c")
-            elif isinstance(widget, CTkAddDelCombobox.ComboBoxWithButtons):
-                widget.clear_data()
-
-    def clear_whole_data(self):
-        """
-        Очистка всех данных в секциях компонентов, деталей и базовой информации.
-        """
-        self.clear_data_from_section(self.widgetsBasic)
-        self.clear_data_from_section(self.widgetsDetail)
-        self.clear_data_from_section(self.widgetsComponents)
-
-    def add_whole_data_to_bd(self):
-        """
-        Добавление всех данных в базу данных.
-        """
-        try:
-            # Получение данных
-            values_component = self.get_data_from_components()
-            values_details = self.get_data_from_details()
-            values_basic = self.get_data_from_basic()
-
-            # Список кортежей, где каждый кортеж представляет столбец, который нужно обновить, и соответствующую таблицу
-            columns_to_update = [
-                (3, "type_of_device", "id", values_basic),
-                (4, "place_of_installation", "id", values_basic),
-                (6, "material_resp_person", "id", values_basic),
-                (7, "branch_office", "id", values_basic),
-                (8, "structural_unit", "id", values_basic)
-            ]
-
-            # Обновление значений в values_basic
-            for index, table, column, values in columns_to_update:
-                value = values[index]  # Значение, которое нужно заменить на id
-                id_result = db_manager.get_data(table, "id", f"name = '{value}'")
-                if id_result:
-                    values[index] = id_result[0][0]  # Обновляем значение на id из таблицы
-                else:
-                    print(f"Could not find id for {table} with name '{value}'")
-
-            last_component_id = db_manager.get_last_id("component")
-            values_details.insert(0, last_component_id)
-            db_manager.insert_data_component(*values_component)
-            db_manager.insert_data_detail_info(*values_details)
-            last_details_id = db_manager.get_last_id("detail_info")
-            values_basic.append(last_details_id)
-
-            db_manager.insert_data_basic_info(*values_basic)
-
-            # Отображение окна с сообщением об успешном добавлении
-            CTkMessagebox(title="Успех",
-                          message="Компьютер успешно добавлен!\n Если была добавлена новое место расположения или был добавлен ПЕРВЫЙ компьютер - перезапустите приложение",
-                          icon="check", option_1="Ok")
-
-        except Exception as e:
-            # Отображение окна с сообщением об ошибке
-            CTkMessagebox(title="Ошибка", message="Ошибка при добавлении компьютера: " + str(e), icon="cancel")
-            print(f"An error occurred while adding computer: {e}")
-
 
 if __name__ == "__main__":
     root = tkinter.Tk()
-    app = AddDevice_(root)
+    app = EditDevice_(root)
     root.mainloop()

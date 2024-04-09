@@ -326,4 +326,65 @@ class DatabaseManager:
             print("An error occurred:", e)
             return []
 
+    def get_data_by_branch_and_structural_unit(self, branch_name, structural_unit_name):
+        """
+        Получение данных по филиалу и структурному подразделению.
+
+        Args:
+            branch_name (str): Название филиала.
+            structural_unit_name (str): Название структурного подразделения.
+
+        Returns:
+            list: Список данных, соответствующих указанным филиалу и структурному подразделению.
+        """
+        try:
+            # SQL-запрос для получения данных
+            query = """
+                    SELECT * FROM basic_info
+                    INNER JOIN branch_office ON basic_info.branch_id = branch_office.id
+                    INNER JOIN structural_unit ON basic_info.structural_unit_id = structural_unit.id
+                    WHERE branch_office.name = ? AND structural_unit.name = ?
+                    """
+
+            # Выполнение SQL-запроса с передачей параметров
+            self.cur.execute(query, (branch_name, structural_unit_name))
+
+            # Получение результатов запроса
+            data = self.cur.fetchall()
+
+            return data
+
+        except pyodbc.Error as e:
+            print("An error occurred:", e)
+            return []
+
+    def get_basic_info_by_branch_and_structural_unit(self, branch_name, unit_name):
+        """
+        Получение данных из таблицы basic_info по заданному филиалу и структурному подразделению.
+
+        Args:
+            branch_name: Название филиала.
+            unit_name: Название структурного подразделения.
+
+        Returns:
+            list: Список кортежей с данными из таблицы basic_info.
+        """
+        try:
+            # Выполнение запроса SQL для получения данных
+            query = """
+                SELECT * FROM basic_info
+                INNER JOIN branch_office ON basic_info.branch_id = branch_office.id
+                INNER JOIN structural_unit ON basic_info.structural_unit_id = structural_unit.id
+                WHERE branch_office.name = ? AND structural_unit.name = ?
+            """
+            self.cur.execute(query, (branch_name, unit_name))
+            data = self.cur.fetchall()
+            return data
+        except pyodbc.Error as e:
+            print("An error occurred:", e)
+            raise
+
+
+
+
 

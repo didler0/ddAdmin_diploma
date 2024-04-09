@@ -6,6 +6,7 @@ from hPyT import *
 import tkinter as tk
 from dataBase import *
 from addDevice import *
+from editDevice import *
 
 customtkinter.set_appearance_mode("Dark")
 customtkinter.set_default_color_theme("blue")
@@ -27,7 +28,7 @@ class UpperFrame(customtkinter.CTkFrame):
             {"text": "Добавить устройство", "command": self.AddPc},
             {"text": "Редактировать данные о устройствах", "command": self.EditPc},
             {"text": "Формирование отчетов", "command": self.ExportPc},
-            {"text": "Обновить данные", "command": self.ReloadData},
+
             {"text": "Ремонты", "command": self.Repairs, "fg_color": "#FF8C19", "hover_color": "#4DFFFF", "text_color": "black"}
         ]
 
@@ -43,7 +44,7 @@ class UpperFrame(customtkinter.CTkFrame):
                 button.configure(text_color=button_info["text_color"])
 
         self.AppearanceButton = customtkinter.CTkOptionMenu(
-            self, values=["Светлая", "Тёмная"], command=self.change_appearance_mode_event)
+            self, values=[ "Тёмная","Светлая"], command=self.change_appearance_mode_event)
         self.AppearanceButton.grid(
             row=0, column=len(button_data), padx=20, pady=(10, 10))
 
@@ -57,13 +58,10 @@ class UpperFrame(customtkinter.CTkFrame):
     def EditPc(self):
         """Метод для открытия окна редактирования устройства"""
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
-            self.toplevel_window = editPC(self)
+            self.toplevel_window = EditDevice_(self)
         else:
             self.toplevel_window.focus()
 
-    def ReloadData(self):
-        """Метод для обновления данных"""
-        self.scroll_frame.destroy_and_recreate()
 
     def change_appearance_mode_event(self, new_appearance_mode: str):
         """Метод для смены цветовой темы"""
@@ -89,37 +87,65 @@ class UpperFrame(customtkinter.CTkFrame):
             self.toplevel_window.focus()
             # стальные методы класса остаются без изменений
 
+class MiddleFrame(customtkinter.CTkFrame):
+
+    def __init__(self,master):
+        super().__init__(master)
+
+
+
+        customtkinter.CTkLabel(master=self, text="Выберите филиал").grid(row=0, column=0, padx=10, pady=10,sticky='nsew')
+        customtkinter.CTkLabel(master=self, text="Выберите структурное подразделение").grid(row=1, column=0, padx=10, pady=10, sticky='nsew')
+        combobox1 = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly")
+        combobox1.grid(row=0, column=1, padx=10, pady=10, sticky="w")
+        self.FillComboBox(combobox1,db_manager.get_data("branch_office","*"))
+
+        combobox2 = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly")
+        combobox2.grid(row=1, column=1, padx=10, pady=10, sticky="w")
+        self.FillComboBox(combobox2, db_manager.get_data("structural_unit", "*"))
+
+
+        load_data_button = customtkinter.CTkButton(master=self, text="Загрузить данные", command=lambda: self.add_whole_data_to_bd())
+        load_data_button.grid(row=0, column=2, padx=10, pady=10,rowspan=2, sticky='nsew', columnspan=2)
+
+        reload_data_button = customtkinter.CTkButton(master=self, text="Обновить", hover_color="green",command=lambda: self.add_whole_data_to_bd())
+        reload_data_button.grid(row=0, column=4, padx=10, pady=10, rowspan=2, sticky='nsew', columnspan=2)
+
+    def FillComboBox(self, combobox_, data_):
+        dataa = [str(data[0]) + " | " + str(data[1]) for data in data_]
+        combobox_.configure(values=dataa)
+        self.update()
+
+
 
 class DownFrame(customtkinter.CTkScrollableFrame):
     """"Класс для нижнего фрейма"""
 
     def __init__(self, master):
-        """"Инициализация нижнего фрейма"""
         super().__init__(master, height=400)
+        self.grid_columnconfigure(0, weight=1)
         self.struct_unit_ = customtkinter.CTkTabview(master=self)
+        self.struct_unit_.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        self.branches_tabs = {}
+        self.units_tabs = {}
 
-        self.struct_unit_.pack(fill='both', expand=True, padx=10, pady=10)
-        self.struct_unit_tabs = []
-        self.branch_ = customtkinter.CTkTabview(master=self.struct_unit_)
-        self.branch_.grid(row=0, column=0, padx=10, pady=10)
-        self.branches_tabs = []
-
+        # Получение уникальных филиалов и структурных подразделений из базы данных
         data = db_manager.get_unique_branch_struct()
-
         if data is not None:
             branches_, units_ = data
+            branches_.sort()
+            units_.sort()
         else:
             CTkMessagebox(title="Ошибка", message="Отсутствуют данные!", icon="cancel")
-        branches_, units_.sort()
 
+        # Создание вкладок для филиалов и структурных подразделений
         for branch_name in branches_:
-            print(branch_name)
-            tab = self.branch_.add(branch_name)
-            self.branches_tabs.append(tab)
+            tab = self.struct_unit_.add(branch_name)
+            self.branches_tabs[branch_name] = tab
 
         for unit_name in units_:
             tab = self.struct_unit_.add(unit_name)
-            self.struct_unit_tabs.append(tab)
+            self.units_tabs[unit_name] = tab
 
 
 class App(customtkinter.CTk):
@@ -135,11 +161,17 @@ class App(customtkinter.CTk):
         self.geometry(f"{App.WIDTH}x{App.HEIGHT}")
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         maximize_minimize_button.hide(self)
+
+
         self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure((1),weight=0)
 
         maximize_minimize_button.hide(self)
+        self.frame_middle = MiddleFrame(self)
+        self.frame_middle.grid(row=1, column=0, padx=10, pady=10)
         self.frame_down = DownFrame(self)
-        self.frame_down.grid(row=1, column=0, padx=10, pady=10)
+        self.frame_down.grid(row=2, column=0, padx=10, pady=10,sticky="nsew")
+
         self.frame_up = UpperFrame(self)
         self.frame_up.grid(row=0, column=0, padx=10, pady=10)
 
