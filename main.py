@@ -10,8 +10,15 @@ from editDevice import *
 
 customtkinter.set_appearance_mode("Dark")
 customtkinter.set_default_color_theme("blue")
+# Сохранение строки в файл
+with open('database_info.txt', 'w') as file:
+    file.write("DDLAPTOP\\SQLEXPRESS, PCC")
 
-db_manager = DatabaseManager('DDLAPTOP\\SQLEXPRESS', 'PCC')
+
+with open('database_info.txt', 'r') as file:
+    db_info = file.read().strip()
+db_info_parts = db_info.split(', ')
+db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
 db_manager.create_tables()
 
 

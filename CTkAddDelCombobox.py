@@ -2,9 +2,10 @@ import customtkinter
 from CTkMessagebox import CTkMessagebox
 from dataBase import *
 
-# Создание экземпляра менеджера базы данных и создание таблиц, если их нет
-db_manager = DatabaseManager('DDLAPTOP\\SQLEXPRESS', 'PCC')
-db_manager.create_tables()
+with open('database_info.txt', 'r') as file:
+    db_info = file.read().strip()
+db_info_parts = db_info.split(', ')
+db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
 
 class ComboBoxWithButtons(customtkinter.CTkFrame):
     """
@@ -12,7 +13,7 @@ class ComboBoxWithButtons(customtkinter.CTkFrame):
     и кнопок "+" и "-".
     """
 
-    def __init__(self, master, values=None, table="", *args, **kwargs):
+    def __init__(self, master, values=None, table="", command_=None, *args, **kwargs):
         """
         Инициализация комбинированного виджета.
 
@@ -20,6 +21,7 @@ class ComboBoxWithButtons(customtkinter.CTkFrame):
             master: Родительский виджет.
             values (list): Список значений для выпадающего списка.
             table (str) : Таблица для выборки данных
+            command (callable): Функция, которая будет вызвана при нажатии на кнопки.
             *args: Позиционные аргументы для родительского класса.
             **kwargs: Именованные аргументы для родительского класса.
         """
@@ -27,6 +29,7 @@ class ComboBoxWithButtons(customtkinter.CTkFrame):
         super().__init__(master, *args, **kwargs)
         self.values = values  # Список значений для комбобокса
         self.table = table  # Имя таблицы
+
         self.grid_columnconfigure((0, 2, 3), weight=0)  # кнопки не расширяются
         self.grid_columnconfigure(1, weight=1)  # поле ввода расширяется
 
@@ -35,7 +38,7 @@ class ComboBoxWithButtons(customtkinter.CTkFrame):
         self.remove_button.grid(row=0, column=2)
 
         # Создаем выпадающий список
-        self.combobox = customtkinter.CTkComboBox(self, values=self.values, state="readonly")
+        self.combobox = customtkinter.CTkComboBox(self, values=self.values, state="readonly",command=command_)
         self.combobox.grid(row=0, column=1, sticky='nsew')
 
         # Создаем кнопку "+"

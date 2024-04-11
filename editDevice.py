@@ -4,8 +4,10 @@ from dataBase import DatabaseManager
 from CTkMessagebox import CTkMessagebox
 import CTkAddDelCombobox
 
-db_manager = DatabaseManager('DDLAPTOP\\SQLEXPRESS', 'PCC')
-
+with open('database_info.txt', 'r') as file:
+    db_info = file.read().strip()
+db_info_parts = db_info.split(', ')
+db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
 
 class EditDevice_(customtkinter.CTkToplevel):
     """

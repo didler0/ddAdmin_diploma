@@ -149,11 +149,111 @@ class DatabaseManager:
                                 )''')
 
             self.conn.commit()
+            self.create_stored_procedure_get_structural_units()
 
         except pyodbc.Error as e:
             print("An error occurred:", e)
             self.conn.rollback()
             raise
+
+    def create_stored_procedure_get_structural_units(self):
+        """
+        Метод для создания хранимой процедуры GetStructuralUnits.
+
+        Returns:
+            bool: True, если процедура была успешно создана, в противном случае - False.
+        """
+        try:
+            procedure_query = """
+                CREATE PROCEDURE GetStructuralUnits @branchOfficeName NVARCHAR(255)
+                AS
+                BEGIN
+                    DECLARE @branchOfficeId INT
+
+                    -- Получить идентификатор филиала по его имени
+                    SELECT @branchOfficeId = id
+                    FROM branch_office
+                    WHERE name = @branchOfficeName
+
+                    -- Получить структурные подразделения для данного филиала
+                    SELECT su.name
+                    FROM branch_structural_unit bsu
+                    JOIN structural_unit su ON bsu.structural_unit_id = su.id
+                    WHERE bsu.branch_office_id = @branchOfficeId
+                END
+            """
+            self.cur.execute(procedure_query)
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred while creating stored procedure:", e)
+            self.conn.rollback()
+            return False
+
+    def exec_procedure(self, procedure_name, *args):
+        """
+        Метод для выполнения хранимой процедуры с передачей аргументов.
+
+        Args:
+            procedure_name (str): Имя хранимой процедуры.
+            *args: Аргументы, передаваемые в хранимую процедуру.
+
+        Returns:
+            list: Результат выполнения процедуры.
+        """
+        try:
+            # Создаем строку для вызова процедуры с переданными аргументами
+            placeholders = ', '.join('?' for _ in args)
+            query = f"EXEC {procedure_name} {placeholders}"
+            # Выполняем процедуру и возвращаем результат
+            self.cur.execute(query, args)
+            return self.cur.fetchall()
+        except pyodbc.Error as e:
+            print("An error occurred while executing stored procedure:", e)
+            return []
+
+    def check_structural_unit_exists(self, str_unit):
+        query = "SELECT COUNT(*) FROM structural_unit WHERE name = ?"
+        self.cur.execute(query, (str_unit,))
+        result = self.cur.fetchone()[0]
+        return result > 0
+
+    def check_structural_unit_assigned_to_branch(self, str_unit, branch_office):
+        query = "SELECT COUNT(*) FROM branch_structural_unit bsu \
+                 JOIN branch_office bo ON bsu.branch_office_id = bo.id \
+                 JOIN structural_unit su ON bsu.structural_unit_id = su.id \
+                 WHERE bo.name = ? AND su.name = ?"
+        self.cur.execute(query, (branch_office, str_unit))
+        result = self.cur.fetchone()[0]
+        return result > 0
+
+    def assign_structural_unit_to_branch(self, str_unit, branch_office):
+        # Получаем ID филиала по его имени
+        query = "SELECT id FROM branch_office WHERE name = ?"
+        self.cur.execute(query, (branch_office,))
+        branch_office_row = self.cur.fetchone()
+
+        if branch_office_row is None:
+            print(f"Филиал {branch_office} не найден в базе данных.")
+            return  # Выходим из метода, так как филиал не найден
+
+        branch_office_id = branch_office_row[0]
+
+        # Получаем ID структурного подразделения по его имени
+        query = "SELECT id FROM structural_unit WHERE name = ?"
+        self.cur.execute(query, (str_unit,))
+        str_unit_row = self.cur.fetchone()
+
+        if str_unit_row is None:
+            print(f"Структурное подразделение {str_unit} не найдено в базе данных.")
+            return  # Выходим из метода, так как структурное подразделение не найдено
+
+        str_unit_id = str_unit_row[0]
+
+        # Привязываем структурное подразделение к филиалу
+        query = "INSERT INTO branch_structural_unit (branch_office_id, structural_unit_id) VALUES (?, ?)"
+        self.cur.execute(query, (branch_office_id, str_unit_id))
+        self.conn.commit()
 
     def close_connection(self):
         """Метод для закрытия соединения с базой данных"""
@@ -383,6 +483,29 @@ class DatabaseManager:
         except pyodbc.Error as e:
             print("An error occurred:", e)
             raise
+
+    def update(self, table_name, set_clause, where_clause):
+        """
+        Метод для обновления данных в таблице.
+
+        Args:
+            table_name (str): Имя таблицы, в которой нужно обновить данные.
+            set_clause (str): Выражение SET для обновления значений.
+            where_clause (str): Условие WHERE для выбора строк для обновления.
+
+        Returns:
+            bool: True, если обновление прошло успешно, False в противном случае.
+        """
+        try:
+            query = f"UPDATE {table_name} SET {set_clause} WHERE {where_clause}"
+            self.cur.execute(query)
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred while updating data:", e)
+            self.conn.rollback()
+            return False
+
 
 
 
