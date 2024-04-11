@@ -227,33 +227,7 @@ class DatabaseManager:
         result = self.cur.fetchone()[0]
         return result > 0
 
-    def assign_structural_unit_to_branch(self, str_unit, branch_office):
-        # Получаем ID филиала по его имени
-        query = "SELECT id FROM branch_office WHERE name = ?"
-        self.cur.execute(query, (branch_office,))
-        branch_office_row = self.cur.fetchone()
 
-        if branch_office_row is None:
-            print(f"Филиал {branch_office} не найден в базе данных.")
-            return  # Выходим из метода, так как филиал не найден
-
-        branch_office_id = branch_office_row[0]
-
-        # Получаем ID структурного подразделения по его имени
-        query = "SELECT id FROM structural_unit WHERE name = ?"
-        self.cur.execute(query, (str_unit,))
-        str_unit_row = self.cur.fetchone()
-
-        if str_unit_row is None:
-            print(f"Структурное подразделение {str_unit} не найдено в базе данных.")
-            return  # Выходим из метода, так как структурное подразделение не найдено
-
-        str_unit_id = str_unit_row[0]
-
-        # Привязываем структурное подразделение к филиалу
-        query = "INSERT INTO branch_structural_unit (branch_office_id, structural_unit_id) VALUES (?, ?)"
-        self.cur.execute(query, (branch_office_id, str_unit_id))
-        self.conn.commit()
 
     def close_connection(self):
         """Метод для закрытия соединения с базой данных"""
@@ -298,6 +272,7 @@ class DatabaseManager:
             query = f'INSERT INTO {table_name} ({columns}) VALUES ({values})'
             self.cur.execute(query)
             self.conn.commit()
+            print(f"успещно добавлено {values}")
             return True
         except pyodbc.Error as e:
             print("An error occurred:", e)
