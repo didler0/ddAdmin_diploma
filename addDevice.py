@@ -32,6 +32,7 @@ class AddDevice_(customtkinter.CTkToplevel):
             kwargs: Именованные аргументы.
         """
         super().__init__(*args, **kwargs)
+        self.combobox_structural_unit = customtkinter.CTkComboBox
         self.tabview = None
         self.widgetsBasic = []
         self.widgetsDetail = []
@@ -113,15 +114,14 @@ class AddDevice_(customtkinter.CTkToplevel):
             elif text == "Филиал":
                 data = db_manager.get_data("branch_office", "name", "")
                 data = [str(row[0]) for row in data]
-                branch_office = CTkAddDelCombobox.ComboBoxWithButtons(table="branch_office", master=self.tabview.tab("Базовая информация"), values=data)
-                branch_office.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
-                self.widgetsBasic.append(branch_office)
+                combobox1 = customtkinter.CTkComboBox(master=self.tabview.tab("Базовая информация"), values=[" "], state="readonly", command=self.load_data)
+                combobox1.grid(row=i, column=1, padx=10, pady=10, sticky="nsew")
+                self.FillComboBox(combobox1, data)
+                self.widgetsBasic.append(combobox1)
             elif text == "Структурное подразделение":
-                data = db_manager.get_data("structural_unit", "name", "")
-                data = [str(row[0]) for row in data]
-                structural_unit = CTkAddDelCombobox.ComboBoxWithButtons(table="structural_unit", master=self.tabview.tab("Базовая информация"), values=data)
-                structural_unit.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
-                self.widgetsBasic.append(structural_unit)
+                self.combobox_structural_unit = customtkinter.CTkComboBox(master=self.tabview.tab("Базовая информация"), values=[" "], state="readonly")
+                self.combobox_structural_unit.grid(row=i, column=1, padx=10, pady=10, sticky="nsew")
+                self.widgetsBasic.append(self.combobox_structural_unit)
             elif text == "Материально ответственный":
                 data = db_manager.get_data("material_resp_person", "name", "")
                 data = [str(row[0]) for row in data]
@@ -132,6 +132,12 @@ class AddDevice_(customtkinter.CTkToplevel):
                 textBox = customtkinter.CTkTextbox(master=self.tabview.tab("Базовая информация"), height=90)
                 textBox.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(textBox)
+    def load_data(self,choice):
+        print(choice)
+
+        data= db_manager.exec_procedure("GetStructuralUnits",choice)
+        data = [str(row[0]) for row in data]
+        self.FillComboBox(self.combobox_structural_unit,data)
 
     def create_detail_info_tab(self, labels_detail):
         """
@@ -220,9 +226,12 @@ class AddDevice_(customtkinter.CTkToplevel):
             elif isinstance(widget, CTkAddDelCombobox.ComboBoxWithButtons):
                 value = widget.get_current_value()
                 widget.clear_data()
+            elif isinstance(widget,customtkinter.CTkComboBox):
+                value = widget.get()
             else:
                 value = None
             values_basic.append(value)
+
         return values_basic
 
     def clear_data_from_section(self, widgets):
@@ -294,6 +303,11 @@ class AddDevice_(customtkinter.CTkToplevel):
             # Отображение окна с сообщением об ошибке
             CTkMessagebox(title="Ошибка", message="Ошибка при добавлении компьютера: " + str(e), icon="cancel")
             print(f"An error occurred while adding computer: {e}")
+
+    def FillComboBox(self, combobox, data_):
+        sasha = [str(data) for data in data_]
+        combobox.configure(values=sasha)
+        self.update()
 
 
 if __name__ == "__main__":

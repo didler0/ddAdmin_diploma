@@ -149,7 +149,9 @@ class DatabaseManager:
                                 )''')
 
             self.conn.commit()
+
             self.create_stored_procedure_get_structural_units()
+            self.create_stored_procedure_get_info_by_branch_and_structural_unit()
 
         except pyodbc.Error as e:
             print("An error occurred:", e)
@@ -182,6 +184,39 @@ class DatabaseManager:
                     WHERE bsu.branch_office_id = @branchOfficeId
                 END
             """
+            self.cur.execute(procedure_query)
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred while creating stored procedure:", e)
+            self.conn.rollback()
+            return False
+
+    def create_stored_procedure_get_info_by_branch_and_structural_unit(self):
+        """
+                Метод для создания хранимой процедуры GetInfoByBranchAndStructuralUnit.
+
+                Returns:
+                    bool: True, если процедура была успешно создана, в противном случае - False.
+                """
+        try:
+            procedure_query = """
+                        CREATE PROCEDURE GetInfoByBranchAndStructuralUnit
+                    @branch_id INT,
+                    @structural_unit_id INT
+                AS
+                BEGIN
+                    SELECT bi.*, di.*, c.*, td.*, pi.*, mrp.*
+                    FROM [dbo].[basic_info] bi
+                    JOIN [dbo].[detail_info] di ON bi.detail_info_id = di.id
+                    JOIN [dbo].[component] c ON di.component_id = c.id
+                    LEFT JOIN [dbo].[type_of_device] td ON bi.type_of_device_id = td.id
+                    LEFT JOIN [dbo].[place_of_installation] pi ON bi.place_of_installation_id = pi.id
+                    LEFT JOIN [dbo].[material_resp_person] mrp ON bi.material_resp_person_id = mrp.id
+                    WHERE bi.branch_id = @branch_id
+                    AND bi.structural_unit_id = @structural_unit_id;  -- Add a semicolon here
+                END
+                    """
             self.cur.execute(procedure_query)
             self.conn.commit()
             return True
@@ -356,32 +391,7 @@ class DatabaseManager:
             self.conn.rollback()
             return False
 
-    def get_unique_branch_struct(self):
-        """
-        Метод для получения уникальных пар филиалов и подразделений.
 
-        Returns:
-            tuple: Кортеж из двух списков, первый содержит названия филиалов, второй - названия подразделений.
-        """
-        try:
-            query = '''
-                SELECT DISTINCT branch_office.name AS branch_name, structural_unit.name AS structural_name
-                FROM basic_info
-                JOIN branch_office ON basic_info.branch_id = branch_office.id
-                JOIN structural_unit ON basic_info.structural_unit_id = structural_unit.id
-            '''
-            self.cur.execute(query)
-            results = self.cur.fetchall()
-
-            branch_names = []
-            structural_names = []
-            for result in results:
-                branch_names.append(result[0])  # Добавить название филиала в список
-                structural_names.append(result[1])  # Добавить название подразделения в список
-            return branch_names, structural_names
-        except pyodbc.Error as e:
-            print("Произошла ошибка:", e)
-            return [], []
 
     def get_column_names(self, table_name):
         """

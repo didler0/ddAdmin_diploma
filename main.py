@@ -7,7 +7,7 @@ import tkinter as tk
 from dataBase import *
 from addDevice import *
 from editDevice import *
-
+from aioBranchOfficeStructuralUnit import *
 customtkinter.set_appearance_mode("Dark")
 customtkinter.set_default_color_theme("blue")
 # Сохранение строки в файл
@@ -34,8 +34,8 @@ class UpperFrame(customtkinter.CTkFrame):
         button_data = [
             {"text": "Добавить устройство", "command": self.AddPc},
             {"text": "Редактировать данные о устройствах", "command": self.EditPc},
+            {"text": "Редактировать филиалы", "command": self.EditBranch},
             {"text": "Формирование отчетов", "command": self.ExportPc},
-
             {"text": "Ремонты", "command": self.Repairs, "fg_color": "#FF8C19", "hover_color": "#4DFFFF", "text_color": "black"}
         ]
 
@@ -68,7 +68,12 @@ class UpperFrame(customtkinter.CTkFrame):
             self.toplevel_window = EditDevice_(self)
         else:
             self.toplevel_window.focus()
-
+    def EditBranch(self):
+        """Метод для открытия окна редактирования филиалов"""
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
+            self.toplevel_window = AioBranchOfficeStructuralUnit(self)
+        else:
+            self.toplevel_window.focus()
 
     def change_appearance_mode_event(self, new_appearance_mode: str):
         """Метод для смены цветовой темы"""
@@ -103,25 +108,114 @@ class MiddleFrame(customtkinter.CTkFrame):
 
         customtkinter.CTkLabel(master=self, text="Выберите филиал").grid(row=0, column=0, padx=10, pady=10,sticky='nsew')
         customtkinter.CTkLabel(master=self, text="Выберите структурное подразделение").grid(row=1, column=0, padx=10, pady=10, sticky='nsew')
-        combobox1 = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly")
-        combobox1.grid(row=0, column=1, padx=10, pady=10, sticky="w")
-        self.FillComboBox(combobox1,db_manager.get_data("branch_office","*"))
+        data = db_manager.get_data("branch_office", "name", "")
+        data = [str(row[0]) for row in data]
+        self.combobox1_branch_office = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly", command=self.load_data)
+        self.combobox1_branch_office.grid(row=0, column=1, padx=10, pady=10, sticky="w")
+        self.FillComboBox(self.combobox1_branch_office,data)
 
-        combobox2 = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly")
-        combobox2.grid(row=1, column=1, padx=10, pady=10, sticky="w")
-        self.FillComboBox(combobox2, db_manager.get_data("structural_unit", "*"))
+        self.combobox2_structural_unit = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly",command=self.load_main_data)
+        self.combobox2_structural_unit.grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
 
-        load_data_button = customtkinter.CTkButton(master=self, text="Загрузить данные", command=lambda: self.add_whole_data_to_bd())
-        load_data_button.grid(row=0, column=2, padx=10, pady=10,rowspan=2, sticky='nsew', columnspan=2)
-
-        reload_data_button = customtkinter.CTkButton(master=self, text="Обновить", hover_color="green",command=lambda: self.add_whole_data_to_bd())
+        reload_data_button = customtkinter.CTkButton(master=self, text="Обновить", hover_color="green",command=lambda: self.reload_all())
         reload_data_button.grid(row=0, column=4, padx=10, pady=10, rowspan=2, sticky='nsew', columnspan=2)
 
-    def FillComboBox(self, combobox_, data_):
-        dataa = [str(data[0]) + " | " + str(data[1]) for data in data_]
-        combobox_.configure(values=dataa)
+    def load_main_data(self,choice):
+        print(self.combobox1_branch_office.get())
+        print(choice)
+        branch_id = 1
+        structural_unit_id = 55
+        result = db_manager.exec_procedure("GetInfoByBranchAndStructuralUnit", branch_id, structural_unit_id)
+        print(result)
+        # Assuming result contains the data returned from the stored procedure
+
+        # Define the structure of your data
+        data_structure = {
+            'basic_info': {
+                'id': None,
+                'ip': None,
+                'name': None,
+                'network_name': None,
+                'type_of_device_id': None,
+                'place_of_installation_id': None,
+                'description': None,
+                'material_resp_person_id': None,
+                'last_status': None,
+                'data_status': None,
+                'last_repair': None,
+                'detail_info_id': None,
+                'branch_id': None,
+                'structural_unit_id': None
+            },
+            'detail_info': {
+                'id': None,
+                'component_id': None,
+                'inventory_number': None,
+                'serial_number': None,
+                'mac_address': None,
+                'oper_system': None,
+                'year_of_purchase': None,
+                'month_of_warranty': None
+            },
+            'component': {
+                'id': None,
+                'processor': None,
+                'ram': None,
+                'motherboard': None,
+                'gpu': None,
+                'psu': None,
+                'networkCard': None,
+                'cooler': None,
+                'chasis': None,
+                'hdd': None,
+                'ssd': None,
+                'monitor': None,
+                'keyboard': None,
+                'mouse': None,
+                'audio': None
+            },
+            'type_of_device': {
+                'id': None,
+                'name': None
+            },
+            'place_of_installation': {
+                'id': None,
+                'name': None
+            },
+            'material_resp_person': {
+                'id': None,
+                'name': None
+            }
+        }
+
+        # Initialize the parsed data dictionary
+        parsed_data = {}
+
+        # Iterate over the result and fill in the parsed data dictionary
+        for row in result:
+            parsed_row = {}
+            for table_name, table_structure in data_structure.items():
+                parsed_row[table_name] = {}
+                for i, column_value in enumerate(row[:len(table_structure)]):
+                    column_name = list(table_structure.keys())[i]
+                    parsed_row[table_name][column_name] = column_value
+            parsed_data[row[0]] = parsed_row
+
+        # Display the parsed data
+        print(parsed_data)
+
+    def reload_all(self):
+        pass
+    def FillComboBox(self, combobox, data_):
+        data__ = [str(data) for data in data_]
+        combobox.configure(values=data__)
         self.update()
+    def load_data(self,choice):
+        data= db_manager.exec_procedure("GetStructuralUnits",choice)
+        data = [str(row[0]) for row in data]
+        self.FillComboBox(self.combobox2_structural_unit,data)
+
 
 
 
@@ -137,22 +231,22 @@ class DownFrame(customtkinter.CTkScrollableFrame):
         self.units_tabs = {}
 
         # Получение уникальных филиалов и структурных подразделений из базы данных
-        data = db_manager.get_unique_branch_struct()
-        if data is not None:
-            branches_, units_ = data
-            branches_.sort()
-            units_.sort()
-        else:
-            CTkMessagebox(title="Ошибка", message="Отсутствуют данные!", icon="cancel")
-
-        # Создание вкладок для филиалов и структурных подразделений
-        for branch_name in branches_:
-            tab = self.struct_unit_.add(branch_name)
-            self.branches_tabs[branch_name] = tab
-
-        for unit_name in units_:
-            tab = self.struct_unit_.add(unit_name)
-            self.units_tabs[unit_name] = tab
+        #data = db_manager.get_unique_branch_struct()
+        #if data is not None:
+        #    branches_, units_ = data
+        #    branches_.sort()
+        #    units_.sort()
+        #else:
+        #    CTkMessagebox(title="Ошибка", message="Отсутствуют данные!", icon="cancel")
+#
+        ## Создание вкладок для филиалов и структурных подразделений
+        #for branch_name in branches_:
+        #    tab = self.struct_unit_.add(branch_name)
+        #    self.branches_tabs[branch_name] = tab
+#
+        #for unit_name in units_:
+        #    tab = self.struct_unit_.add(unit_name)
+        #    self.units_tabs[unit_name] = tab
 
 
 class App(customtkinter.CTk):
