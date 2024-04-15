@@ -287,12 +287,27 @@ class AddDevice_(customtkinter.CTkToplevel):
 
             last_component_id = db_manager.get_last_id("component")
             values_details.insert(0, last_component_id)
-            db_manager.insert_data_component(*values_component)
-            db_manager.insert_data_detail_info(*values_details)
-            last_details_id = db_manager.get_last_id("detail_info")
-            values_basic.append(last_details_id)
+            try:
+                db_manager.insert_data_component(*values_component)
+            except Exception as e:
+                # Отображение окна с сообщением об ошибке
+                CTkMessagebox(title="Ошибка", message="Ошибка при добавлении компьютера: " + str(e), icon="cancel")
+                print(f"An error occurred while adding computer: {e}")
+            try:
+                db_manager.insert_data_detail_info(*values_details)
+            except Exception as e:
+                # Отображение окна с сообщением об ошибке
+                CTkMessagebox(title="Ошибка", message="Ошибка при добавлении компьютера: " + str(e), icon="cancel")
+                print(f"An error occurred while adding computer: {e}")
 
-            db_manager.insert_data_basic_info(*values_basic)
+            last_details_id = db_manager.get_last_id("detail_info")
+            try:
+                values_basic.append(last_details_id)
+                db_manager.insert_data_basic_info(*values_basic)
+            except Exception as e:
+                # Отображение окна с сообщением об ошибке
+                CTkMessagebox(title="Ошибка", message="Ошибка при добавлении компьютера: " + str(e), icon="cancel")
+                print(f"An error occurred while adding computer: {e}")
 
             # Отображение окна с сообщением об успешном добавлении
             CTkMessagebox(title="Успех",

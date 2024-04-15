@@ -152,7 +152,7 @@ class DatabaseManager:
 
             self.create_stored_procedure_get_structural_units()
             self.create_stored_procedure_get_info_by_branch_and_structural_unit()
-
+            self.create_trigger()
         except pyodbc.Error as e:
             print("An error occurred:", e)
             self.conn.rollback()
@@ -202,20 +202,35 @@ class DatabaseManager:
         try:
             procedure_query = """
                         CREATE PROCEDURE GetInfoByBranchAndStructuralUnit
-                    @branch_id INT,
-                    @structural_unit_id INT
-                AS
-                BEGIN
-                    SELECT bi.*, di.*, c.*, td.*, pi.*, mrp.*
-                    FROM [dbo].[basic_info] bi
-                    JOIN [dbo].[detail_info] di ON bi.detail_info_id = di.id
-                    JOIN [dbo].[component] c ON di.component_id = c.id
-                    LEFT JOIN [dbo].[type_of_device] td ON bi.type_of_device_id = td.id
-                    LEFT JOIN [dbo].[place_of_installation] pi ON bi.place_of_installation_id = pi.id
-                    LEFT JOIN [dbo].[material_resp_person] mrp ON bi.material_resp_person_id = mrp.id
-                    WHERE bi.branch_id = @branch_id
-                    AND bi.structural_unit_id = @structural_unit_id;  -- Add a semicolon here
-                END
+    @branch_id INT,
+    @structural_unit_id INT
+AS
+BEGIN
+    SELECT 
+        bi.id,
+        bi.ip,
+        bi.name,
+        bi.network_name,
+        td.name AS type_of_device_name,
+        pi.name AS place_of_installation_name,
+        mrp.name AS material_resp_person_name,
+        bi.last_status,
+        bi.data_status,
+        bi.last_repair,
+		bi.detail_info_id
+    FROM 
+        [dbo].[basic_info] bi
+    LEFT JOIN 
+        [dbo].[type_of_device] td ON bi.type_of_device_id = td.id
+    LEFT JOIN 
+        [dbo].[place_of_installation] pi ON bi.place_of_installation_id = pi.id
+    LEFT JOIN 
+        [dbo].[material_resp_person] mrp ON bi.material_resp_person_id = mrp.id
+    WHERE 
+        bi.branch_id = @branch_id
+        AND bi.structural_unit_id = @structural_unit_id;
+END
+
                     """
             self.cur.execute(procedure_query)
             self.conn.commit()
@@ -225,6 +240,35 @@ class DatabaseManager:
             self.conn.rollback()
             return False
 
+    def create_trigger(self):
+        try:
+            # Проверка наличия триггера trg_StatusUpdate
+            self.cur.execute("SELECT COUNT(*) FROM sys.triggers WHERE name = 'trg_StatusUpdate'")
+            if self.cur.fetchone()[0] == 0:
+                # Создание триггера trg_StatusUpdate (если его нет)
+                self.cur.execute('''
+                    CREATE TRIGGER trg_StatusUpdate
+                    ON basic_info
+                    AFTER INSERT, UPDATE
+                    AS
+                    BEGIN
+                        DECLARE @ip VARCHAR(15)
+                        DECLARE @last_status BIT
+                        DECLARE @data_status DATETIME
+
+                        SELECT @ip = inserted.ip, @last_status = inserted.last_status, @data_status = inserted.data_status
+                        FROM inserted
+
+                        INSERT INTO status (basic_info_id, status_, status_date)
+                        SELECT id, @last_status, @data_status
+                        FROM basic_info
+                        WHERE ip = @ip
+                    END
+                ''')
+                self.conn.commit()
+                print("Trigger trg_StatusUpdate created successfully.")
+        except Exception as e:
+            print(f"Error creating trigger: {str(e)}")
     def exec_procedure(self, procedure_name, *args):
         """
         Метод для выполнения хранимой процедуры с передачей аргументов.
@@ -490,6 +534,34 @@ class DatabaseManager:
             print("An error occurred while updating data:", e)
             self.conn.rollback()
             return False
+
+    def add_status(self, ip_address, last_status):
+        """
+        Метод для добавления нового статуса в базу данных для указанного IP-адреса.
+
+        Аргументы:
+        ip_address (str): IP-адрес устройства, для которого добавляется статус.
+        last_status (int): Новый статус устройства.
+
+        Возвращает:
+        None
+
+        Исключения:
+        Исключение может возникнуть при выполнении SQL-запроса или коммита транзакции.
+        """
+        try:
+            # Выполняем SQL-запрос для добавления нового статуса
+            query = f'''
+            UPDATE basic_info
+            SET last_status = {int(last_status)}, data_status = GETDATE()
+            WHERE ip = '{ip_address}'
+            '''
+            self.cur.execute(query)
+            self.conn.commit()
+            print(f"Status for IP {ip_address} updated successfully.")
+            self.conn.commit()
+        except Exception as e:
+            print(f"Error adding status: {str(e)}")
 
 
 
