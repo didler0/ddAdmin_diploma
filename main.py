@@ -7,7 +7,7 @@ from tkinter import messagebox
 from CTkToolTip import *
 from ctkcomponents import *
 from hPyT import *
-
+from PIL import Image
 from addDevice import *
 from editDevice import *
 from aioBranchOfficeStructuralUnit import *
@@ -36,7 +36,6 @@ class UpperFrame(customtkinter.CTkFrame):
 
         button_data = [
             {"text": "Добавить устройство", "command": self.AddPc},
-            {"text": "Редактировать данные о устройствах", "command": self.EditPc},
             {"text": "Редактировать филиалы", "command": self.EditBranch},
             {"text": "Формирование отчетов", "command": self.ExportPc},
             {"text": "Ремонты", "command": self.Repairs, "fg_color": "#FF8C19", "hover_color": "#4DFFFF", "text_color": "black"}
@@ -67,12 +66,7 @@ class UpperFrame(customtkinter.CTkFrame):
         else:
             self.toplevel_window.focus()
 
-    def EditPc(self):
-        """Метод для открытия окна редактирования устройства"""
-        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
-            self.toplevel_window = EditDevice_(self)
-        else:
-            self.toplevel_window.focus()
+
 
     def EditBranch(self):
         """Метод для открытия окна редактирования филиалов"""
@@ -142,13 +136,14 @@ class MiddleFrame(customtkinter.CTkFrame):
 
         for row in result:
             unique_cabinets.add(row[5])  # Добавляем номер кабинета в множество
-
+        unique_cabinets = sorted(unique_cabinets)
         self.tabview = customtkinter.CTkTabview(master=self.DownFrame)
         self.tabview.grid(row=0, column=0)
         self.tabs = list()
 
         for cabinet_number in unique_cabinets:
             tab = self.tabview.add(cabinet_number)
+            CTkToolTip(tab, message="Выбор места установки")
             self.tabs.append(tab)
         for tab in self.tabs:
             self.DownFrame.create_lables(tab)
@@ -186,7 +181,7 @@ class MiddleFrame(customtkinter.CTkFrame):
         data = [str(row[0]) for row in data]
         self.FillComboBox(self.combobox2_structural_unit, data)
 
-    def check_connection(self,ip):
+    def check_connection(self, ip):
         """
         Проверяет доступность указанного IP-адреса путем отправки ICMP-запроса (ping).
 
@@ -215,7 +210,7 @@ class MiddleFrame(customtkinter.CTkFrame):
             print(f"Error: {e}")
             return False
 
-    def check_connections(self,ip_list):
+    def check_connections(self, ip_list):
         """
         Проверяет доступность списка IP-адресов с использованием многопоточности.
 
@@ -236,7 +231,7 @@ class MiddleFrame(customtkinter.CTkFrame):
                 try:
                     # Получение результата задачи (если есть)
                     result = future.result()
-                    print(f"Task for IP {ip} completed successfully.")
+
                 except Exception as e:
                     print(f"Task for IP {ip} encountered an error: {e}")
 
@@ -246,11 +241,12 @@ class DownFrame(customtkinter.CTkScrollableFrame):
 
     def __init__(self, master):
         super().__init__(master, height=400)
+        self.toplevel_window = None
         self.grid_columnconfigure(0, weight=1)
 
     def create_lables(self, tab):
-        labels_text = ["Ip", "Название", "Название в сети", "Тип устройства", "Место установки", "Материально ответственный", "Описание", "Фото",
-                       "Статус", "Последний ремонт", "VNC"]
+        labels_text = ["Ip", "Название", "Название в сети", "Тип устройства", "Место установки", "Мат. отв.", "Описание", "Фото",
+                       "Статус", "Последний ремонт", "VNC", "Редактировать"]
         for idx, text in enumerate(labels_text):
             tab.grid_columnconfigure((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11), weight=1)
             label = customtkinter.CTkLabel(master=tab, text=text, font=("Arial", 14))
@@ -258,19 +254,29 @@ class DownFrame(customtkinter.CTkScrollableFrame):
 
     def create_str(self, tab, data, row):
         def run_vnc_exe(ip_address):
-            subprocess.run(["VNC.exe", ip_address])
-
+            subprocess.run(["resources\\VNC.exe", ip_address])
+        data_with_id = data
         data = data[1:]
 
         for index, item in enumerate(data):
             if index < 6:
                 customtkinter.CTkLabel(master=tab, text=item, font=("Arial", 12)).grid(row=row + 2, column=index, padx=10, pady=10)
 
-        customtkinter.CTkButton(master=tab, text="Описание", command=lambda: print(data[1])).grid(row=row + 2, column=6, pady=10, padx=10)
-        customtkinter.CTkButton(master=tab, text="Фото", command=lambda: print(data[1])).grid(row=row + 2, column=7, pady=10, padx=10)
-        customtkinter.CTkButton(master=tab, text="VNC", command=lambda: threading.Thread(target=run_vnc_exe, args=(data[0],)).start()).grid(row=row + 2, column=10,
-                                                                                                                                            pady=10, padx=10)
-        print(data[6])
+        customtkinter.CTkButton(master=tab, text="Описание", width=85, command=lambda: print(data_with_id[0])).grid(row=row + 2, column=6, pady=10, padx=10)
+
+        customtkinter.CTkButton(master=tab, text="Фото", width=75, command=lambda: print(data_with_id[0])).grid(row=row + 2, column=7, pady=10, padx=10)
+
+        customtkinter.CTkButton(master=tab, text="VNC", width=55, command=lambda: threading.Thread(target=run_vnc_exe, args=(data[0],)).start()).grid(row=row + 2,
+                                                                                                                                                      column=10,
+                                                                                                                                                      pady=10,
+                                                                                                                                                      padx=10)
+
+        image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)))
+        customtkinter.CTkButton(master=tab, text="", image=customtkinter.CTkImage(Image.open(os.path.join(image_path, "resources\\edit_ico.png")), size=(20, 20)),
+                                width=30, command=lambda: self.EditPc(data_with_id[0])).grid(row=row + 2, column=11, pady=10, padx=10)
+
+        if data[8] == None:
+            customtkinter.CTkLabel(master=tab, text="-------", ).grid(row=row + 2, column=9, padx=10, pady=10)
         if data[6] == 0:
             customtkinter.CTkLabel(master=tab, text="          ", bg_color="red").grid(row=row + 2, column=8, padx=10, pady=10)
         else:
@@ -281,6 +287,14 @@ class DownFrame(customtkinter.CTkScrollableFrame):
         # Уничтожаем все дочерние виджеты фрейма
         for widget in self.winfo_children():
             widget.destroy()
+
+    def EditPc(self,bas):
+        print(bas)
+        """Метод для открытия окна редактирования устройства"""
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
+            self.toplevel_window = EditDevice_(self, basic_id=bas)
+        else:
+            self.toplevel_window.focus()
 
 
 class App(customtkinter.CTk):
