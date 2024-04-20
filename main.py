@@ -125,7 +125,7 @@ class MiddleFrame(customtkinter.CTkFrame):
 
     def load_main_data(self, choice):
         self.DownFrame.clear_frame()
-        print(self.combobox1_branch_office.get())
+
         branch_id = db_manager.get_data("branch_office", "id", f"name = '{self.combobox1_branch_office.get()}'")[0][0]
         structural_unit_id = db_manager.get_data("structural_unit", "id", f"name = '{choice}'")[0][0]
         result = db_manager.exec_procedure("GetInfoByBranchAndStructuralUnit", branch_id, structural_unit_id)
@@ -289,7 +289,7 @@ class DownFrame(customtkinter.CTkScrollableFrame):
             widget.destroy()
 
     def EditPc(self,bas):
-        print(bas)
+
         """Метод для открытия окна редактирования устройства"""
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.toplevel_window = EditDevice_(self, basic_id=bas)

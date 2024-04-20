@@ -563,6 +563,112 @@ END
         except Exception as e:
             print(f"Error adding status: {str(e)}")
 
+    def update_basic_info(self, ip, name, network_name, type_of_device_id, place_of_installation_id, description, material_resp_person_id, branch_id,
+                          structural_unit_id, id_value):
+        """
+        Метод для обновления данных в таблице basic_info.
+
+        Args:
+            ip (str): IP-адрес.
+            name (str): Название.
+            network_name (str): Сетевое название.
+            type_of_device_id (int): ID типа устройства.
+            place_of_installation_id (int): ID места установки.
+            description (str): Описание.
+            material_resp_person_id (int): ID материально ответственного лица.
+            branch_id (int): ID филиала.
+            structural_unit_id (int): ID структурного подразделения.
+            id_value (int): Значение id для условия WHERE.
+
+        Returns:
+            bool: True, если обновление прошло успешно, False в противном случае.
+        """
+        try:
+            # Формирование запроса на обновление
+            set_clause = f"ip = '{ip}', name = '{name}', network_name = '{network_name}', type_of_device_id = {type_of_device_id}, place_of_installation_id = {place_of_installation_id}, description = '{description}', material_resp_person_id = {material_resp_person_id}, branch_id = {branch_id}, structural_unit_id = {structural_unit_id}"
+            query = f"UPDATE basic_info SET {set_clause} WHERE id = {id_value}"
+
+            # Выполнение запроса
+            self.cur.execute(query)
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred while updating data in basic_info:", e)
+            self.conn.rollback()
+            return False
+
+    def update_detail_info(self, inventory_number, serial_number, mac_address, oper_system, year_of_purchase, month_of_warranty, id_value):
+        """
+        Метод для обновления данных в таблице values_details.
+
+        Args:
+            inventory_number (str): Инвентарный номер.
+            serial_number (str): Серийный номер.
+            mac_address (str): MAC-адрес.
+            oper_system (str): Операционная система.
+            year_of_purchase (int): Год покупки.
+            month_of_warranty (int): Месяц гарантии.
+            id_value (int): Значение id для условия WHERE.
+
+        Returns:
+            bool: True, если обновление прошло успешно, False в противном случае.
+        """
+        try:
+            # Формирование запроса на обновление
+            set_clause = f"inventory_number = '{inventory_number}', serial_number = '{serial_number}', mac_address = '{mac_address}', oper_system = '{oper_system}', year_of_purchase = {year_of_purchase}, month_of_warranty = {month_of_warranty}"
+            query = f"UPDATE detail_info SET {set_clause} WHERE id = {id_value}"
+
+            # Выполнение запроса
+            self.cur.execute(query)
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred while updating data in values_details:", e)
+            self.conn.rollback()
+            return False
+
+    def update_component(self, processor, ram, motherboard, gpu, psu, networkCard, cooler, chasis, hdd, ssd, monitor, keyboard, mouse, audio, id_value):
+        """
+        Метод для обновления данных в таблице component.
+
+        Args:
+            processor (str): Процессор.
+            ram (str): Оперативная память.
+            motherboard (str): Материнская плата.
+            gpu (str): Видеокарта.
+            psu (str): Блок питания.
+            networkCard (str): Сетевая карта.
+            cooler (str): Система охлаждения.
+            chasis (str): Корпус.
+            hdd (str): Жесткий диск.
+            ssd (str): SSD-накопитель.
+            monitor (str): Монитор.
+            keyboard (str): Клавиатура.
+            mouse (str): Мышь.
+            audio (str): Аудиоустройство.
+            id_value (int): Значение id для условия WHERE.
+
+        Returns:
+            bool: True, если обновление прошло успешно, False в противном случае.
+        """
+        try:
+            # Формирование запроса на обновление
+            set_clause = f"processor = '{processor}', ram = '{ram}', motherboard = '{motherboard}', gpu = '{gpu}', psu = '{psu}', networkCard = '{networkCard}', cooler = '{cooler}', chasis = '{chasis}', hdd = '{hdd}', ssd = '{ssd}', monitor = '{monitor}', keyboard = '{keyboard}', mouse = '{mouse}', audio = '{audio}'"
+            set_clause = f"processor = '{processor}', ram = '{ram}', motherboard = '{motherboard}', gpu = '{gpu}', psu = '{psu}', networkCard = '{networkCard}', cooler = '{cooler}', chasis = '{chasis}', hdd = '{hdd}', ssd = '{ssd}', monitor = '{monitor}', keyboard = '{keyboard}', mouse = '{mouse}', audio = '{audio}'"
+            query = f"UPDATE component SET {set_clause} WHERE id = {id_value}"
+
+            # Выполнение запроса
+            self.cur.execute(query)
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred while updating data in component:", e)
+            self.conn.rollback()
+            return False
+
+
+
+
 
 
 

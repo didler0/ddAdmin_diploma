@@ -9,6 +9,7 @@ with open('database_info.txt', 'r') as file:
 db_info_parts = db_info.split(', ')
 db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
 
+
 class EditDevice_(customtkinter.CTkToplevel):
     def __init__(self, *args, basic_id=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -17,7 +18,6 @@ class EditDevice_(customtkinter.CTkToplevel):
         self.widgetsDetail = []
         self.widgetsComponents = []
         self.basic_id_ = basic_id
-        print(self.basic_id_)
         self.create_window()
 
     def create_window(self):
@@ -66,71 +66,116 @@ class EditDevice_(customtkinter.CTkToplevel):
         del_data_button.grid(row=3, column=0, padx=10, pady=10, sticky='nsew', columnspan=2)
         self.grid_rowconfigure(0, weight=0)
         self.load_dataALL()
+
     def update_all_data(self):
-        data_basic = db_manager.get_data("basic_info", "*", f"id = {self.basic_id_}")
+        try:
+            data_basic = db_manager.get_data("basic_info", "*", f"id = {self.basic_id_}")
+            if data_basic:
+                data_basic = data_basic[0]
+                print(data_basic)
+
+                data_detail_id = data_basic[11]
+                print(data_detail_id)
+
+                data_component_id = db_manager.get_data("detail_info", "component_id", f"id = {data_detail_id}")
+                if data_component_id:
+                    data_component_id = data_component_id[0][0]
+                    print(data_component_id)
+                else:
+                    print("Data for component ID not found.")
+            else:
+                print("No data found for basic info ID.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
         """
         Обновление всех данных в базе данных.
         """
-        try:
-            # Получение данных
-            values_component = self.get_data_from_components()
-            values_details = self.get_data_from_details()
-            values_basic = self.get_data_from_basic()
 
-            # Список кортежей, где каждый кортеж представляет столбец, который нужно обновить, и соответствующую таблицу
-            columns_to_update = [
-                (3, "type_of_device", "id", values_basic),
-                (4, "place_of_installation", "id", values_basic),
-                (6, "material_resp_person", "id", values_basic),
-                (7, "branch_office", "id", values_basic),
-                (8, "structural_unit", "id", values_basic)
-            ]
+        # Получение данных
+        values_component = self.get_data_from_components()
+        values_details = self.get_data_from_details()
+        values_basic = self.get_data_from_basic()
 
-            # Обновление значений в values_basic
-            for index, table, column, values in columns_to_update:
-                value = values[index]  # Значение, которое нужно заменить на id
-                id_result = db_manager.get_data(table, "id", f"name = '{value}'")
-                if id_result:
-                    values[index] = id_result[0][0]  # Обновляем значение на id из таблицы
-                else:
-                    print(f"Could not find id for {table} with name '{value}'")
+        # Список кортежей, где каждый кортеж представляет столбец, который нужно обновить, и соответствующую таблицу
+        columns_to_update = [
+            (3, "type_of_device", "id", values_basic),
+            (4, "place_of_installation", "id", values_basic),
+            (6, "material_resp_person", "id", values_basic),
+            (7, "branch_office", "id", values_basic),
+            (8, "structural_unit", "id", values_basic)
+        ]
 
-            last_component_id = db_manager.get_last_id("component")
-            values_details.insert(0, last_component_id)
-            try:
-                db_manager.insert_data_component(*values_component)
-            except Exception as e:
-                # Отображение окна с сообщением об ошибке
-                CTkMessagebox(title="Ошибка", message="Ошибка при добавлении компьютера: " + str(e), icon="cancel")
-                print(f"An error occurred while adding computer: {e}")
-            try:
-                db_manager.insert_data_detail_info(*values_details)
-            except Exception as e:
-                # Отображение окна с сообщением об ошибке
-                CTkMessagebox(title="Ошибка", message="Ошибка при добавлении компьютера: " + str(e), icon="cancel")
-                print(f"An error occurred while adding computer: {e}")
+        # Обновление значений в values_basic
+        for index, table, column, values in columns_to_update:
+            value = values[index]  # Значение, которое нужно заменить на id
+            id_result = db_manager.get_data(table, "id", f"name = '{value}'")
+            if id_result:
+                values[index] = id_result[0][0]  # Обновляем значение на id из таблицы
+            else:
+                print(f"Could not find id for {table} with name '{value}'")
 
-            last_details_id = db_manager.get_last_id("detail_info")
-            try:
-                values_basic.append(last_details_id)
-                db_manager.insert_data_basic_info(*values_basic)
-            except Exception as e:
-                # Отображение окна с сообщением об ошибке
-                CTkMessagebox(title="Ошибка", message="Ошибка при добавлении компьютера: " + str(e), icon="cancel")
-                print(f"An error occurred while adding computer: {e}")
+        values_basic.append(self.basic_id_)
+        values_details.append(data_detail_id)
+        values_component.append(data_component_id)
 
-            # Отображение окна с сообщением об успешном добавлении
-            CTkMessagebox(title="Успех",
-                          message="Компьютер успешно добавлен!\n Если была добавлена новое место расположения или был добавлен ПЕРВЫЙ компьютер - перезапустите приложение",
-                          icon="check", option_1="Ok")
+        # Обновление данных в базе
+        success = True
 
-        except Exception as e:
-            # Отображение окна с сообщением об ошибке
-            CTkMessagebox(title="Ошибка", message="Ошибка при добавлении компьютера: " + str(e), icon="cancel")
-            print(f"An error occurred while adding computer: {e}")
+        if not db_manager.update_basic_info(*values_basic):
+            CTkMessagebox(title="Ошибка",
+                          message=f"Ошибка при обновлении данных в таблице basic_info. Возможно вы не применили изменения в следующих полях: \nТип устройства,\nМесто установки,\nМатериально ответственный.",
+                          icon="cancel")
+            success = False
+
+        if not db_manager.update_detail_info(*values_details):
+            CTkMessagebox(title="Ошибка", message=f"Ошибка при обновлении данных в таблице detail_info.", icon="cancel")
+            success = False
+
+        if not db_manager.update_component(*values_component):
+            CTkMessagebox(title="Ошибка", message=f"Ошибка при обновлении данных в таблице component.", icon="cancel")
+            success = False
+
+        if success:
+            self.success_()
+
+    def success_(self):
+        # get yes/no answers
+        msg = CTkMessagebox(title="Успешное обновление", cancel_button=None, message="Данные успешно обновлены.", icon="info", option_1="Ok")
+        response = msg.get()
+
+        if response == "Ok":
+            db_manager.close_connection()
+            self.destroy()
+        else:
+            pass
 
     def delete_all_data(self):
-        pass
+        try:
+            data_basic = db_manager.get_data("basic_info", "*", f"id = {self.basic_id_}")
+            if data_basic:
+                data_basic = data_basic[0]
+                print(data_basic)
+
+                data_detail_id = data_basic[11]
+                print(data_detail_id)
+
+                data_component_id = db_manager.get_data("detail_info", "component_id", f"id = {data_detail_id}")
+                if data_component_id:
+                    data_component_id = data_component_id[0][0]
+                    print(data_component_id)
+                else:
+                    print("Data for component ID not found.")
+            else:
+                print("No data found for basic info ID.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+        self.basic_id_
+        data_detail_id
+        data_component_id
+
+
 
     def set_data_to_basic(self, values_basic):
         """
@@ -203,14 +248,11 @@ class EditDevice_(customtkinter.CTkToplevel):
 
         """
         try:
-            self.clear_whole_data()
-
             data_basic = db_manager.get_data("basic_info", "*", f"id = {self.basic_id_}")
             if not data_basic:
                 print("No data found for the specified basic ID.")
                 return
             data_basic = list(data_basic[0])
-            qwe = data_basic
 
             # Dictionary to map column index to table name
             column_to_table = {
@@ -291,7 +333,8 @@ class EditDevice_(customtkinter.CTkToplevel):
             elif text == "Филиал":
                 data = db_manager.get_data("branch_office", "name", "")
                 data = [str(row[0]) for row in data]
-                self.combobox1_branch_office = customtkinter.CTkComboBox(master=self.tabview.tab("Базовая информация"), values=data, state="readonly", command=self.load_data)
+                self.combobox1_branch_office = customtkinter.CTkComboBox(master=self.tabview.tab("Базовая информация"), values=data, state="readonly",
+                                                                         command=self.load_data)
                 self.combobox1_branch_office.grid(row=i, column=1, padx=10, pady=10, sticky="nsew")
                 self.widgetsBasic.append(self.combobox1_branch_office)
             elif text == "Структурное подразделение":
@@ -305,11 +348,12 @@ class EditDevice_(customtkinter.CTkToplevel):
                 textBox = customtkinter.CTkTextbox(master=self.tabview.tab("Базовая информация"), height=90)
                 textBox.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(textBox)
-    def load_data(self,choice):
-        print(choice)
+
+    def load_data(self, choice):
         data = db_manager.exec_procedure("GetStructuralUnits", choice)
         data = [str(row[0]) for row in data]
         self.FillComboBox(self.combobox2_structural_unit, data)
+
     def FillComboBox(self, combobox, data_):
         data__ = [str(data) for data in data_]
         combobox.configure(values=data__)
@@ -382,7 +426,7 @@ class EditDevice_(customtkinter.CTkToplevel):
         for widget in self.widgetsComponents:
             if isinstance(widget, customtkinter.CTkEntry):
                 value = widget.get()
-                widget.delete(0, customtkinter.END)
+
             else:
                 value = None
             values_component.append(value)
@@ -400,7 +444,7 @@ class EditDevice_(customtkinter.CTkToplevel):
         for widget in self.widgetsDetail:
             if isinstance(widget, customtkinter.CTkEntry):
                 value = widget.get()
-                widget.delete(0, customtkinter.END)
+
             else:
                 value = None
             values_detail.append(value)
@@ -418,14 +462,14 @@ class EditDevice_(customtkinter.CTkToplevel):
         for widget in self.widgetsBasic:
             if isinstance(widget, customtkinter.CTkEntry):
                 value = widget.get()
-                widget.delete(0, customtkinter.END)
+
             elif isinstance(widget, customtkinter.CTkTextbox):
                 value = widget.get("1.0", "end-1c")
-                widget.delete("1.0", "end-1c")
+
             elif isinstance(widget, CTkAddDelCombobox.ComboBoxWithButtons):
                 value = widget.get_current_value()
-                widget.clear_data()
-            elif isinstance(widget,customtkinter.CTkComboBox):
+
+            elif isinstance(widget, customtkinter.CTkComboBox):
                 value = widget.get()
             else:
                 value = None
