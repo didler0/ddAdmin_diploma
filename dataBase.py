@@ -105,7 +105,7 @@ class DatabaseManager:
                                     description NVARCHAR(MAX),
                                     material_resp_person_id INT,
                                     last_status BIT,
-                                    data_status DATE,
+                                    data_status datetime,
                                     last_repair DATE,
                                     detail_info_id INT,
                                     branch_id INT,
@@ -144,7 +144,7 @@ class DatabaseManager:
                                     id INT PRIMARY KEY IDENTITY(1,1),
                                     basic_info_id INT,
                                     status_ INT,
-                                    status_date DATE,
+                                    status_date DATETIME,
                                     FOREIGN KEY(basic_info_id) REFERENCES basic_info(id) ON DELETE CASCADE ON UPDATE CASCADE
                                 )''')
 
@@ -536,19 +536,6 @@ END
             return False
 
     def add_status(self, ip_address, last_status):
-        """
-        Метод для добавления нового статуса в базу данных для указанного IP-адреса.
-
-        Аргументы:
-        ip_address (str): IP-адрес устройства, для которого добавляется статус.
-        last_status (int): Новый статус устройства.
-
-        Возвращает:
-        None
-
-        Исключения:
-        Исключение может возникнуть при выполнении SQL-запроса или коммита транзакции.
-        """
         try:
             # Выполняем SQL-запрос для добавления нового статуса
             query = f'''

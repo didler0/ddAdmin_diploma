@@ -25,8 +25,8 @@ class EditDevice_(customtkinter.CTkToplevel):
         Создание окна добавления компьютера.
         """
         self.title("Редактирование устройства")
-        self.geometry("600x700")
-        self.minsize(600, 700)
+        self.geometry("600x750")
+        self.minsize(600, 750)
 
         # Метки для базовой информации
         labels_basic = ["IP Адрес", "Название", "Сетевое имя", "Тип устройства", "Место установки", "Описание",
@@ -43,7 +43,7 @@ class EditDevice_(customtkinter.CTkToplevel):
         self.widgetsComponents = []
 
         self.grid_columnconfigure(1, weight=1)
-        self.frame = customtkinter.CTkScrollableFrame(self, height=520)
+        self.frame = customtkinter.CTkScrollableFrame(self, height=620)
         self.frame.grid(row=1, column=0, padx=10, pady=10, sticky='nsew', columnspan=2)
 
         self.tabview = customtkinter.CTkTabview(master=self.frame, height=515, width=550)
@@ -137,45 +137,24 @@ class EditDevice_(customtkinter.CTkToplevel):
             success = False
 
         if success:
-            self.success_()
+            self.success_("Данные успешно обновлены!")
 
-    def success_(self):
+    def success_(self, message_):
         # get yes/no answers
-        msg = CTkMessagebox(title="Успешное обновление", cancel_button=None, message="Данные успешно обновлены.", icon="info", option_1="Ok")
+        msg = CTkMessagebox(title="Успех!", cancel_button=None, message=message_, icon="check", option_1="Ok")
         response = msg.get()
 
         if response == "Ok":
-            db_manager.close_connection()
             self.destroy()
         else:
             pass
 
     def delete_all_data(self):
         try:
-            data_basic = db_manager.get_data("basic_info", "*", f"id = {self.basic_id_}")
-            if data_basic:
-                data_basic = data_basic[0]
-                print(data_basic)
-
-                data_detail_id = data_basic[11]
-                print(data_detail_id)
-
-                data_component_id = db_manager.get_data("detail_info", "component_id", f"id = {data_detail_id}")
-                if data_component_id:
-                    data_component_id = data_component_id[0][0]
-                    print(data_component_id)
-                else:
-                    print("Data for component ID not found.")
-            else:
-                print("No data found for basic info ID.")
+            db_manager.delete_data("basic_info", f"id = {self.basic_id_}")
+            self.success_("Данные успешно удалены!")
         except Exception as e:
-            print(f"An error occurred: {e}")
-
-        self.basic_id_
-        data_detail_id
-        data_component_id
-
-
+            CTkMessagebox(title="Ошибка", message=f"Ошибка при обновлении данных в таблице component.\n {e}", icon="cancel")
 
     def set_data_to_basic(self, values_basic):
         """

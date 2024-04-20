@@ -3,6 +3,7 @@ import concurrent.futures
 import os
 import threading
 import subprocess
+import time
 from tkinter import messagebox
 from CTkToolTip import *
 from ctkcomponents import *
@@ -181,17 +182,8 @@ class MiddleFrame(customtkinter.CTkFrame):
         data = [str(row[0]) for row in data]
         self.FillComboBox(self.combobox2_structural_unit, data)
 
-    def check_connection(self, ip):
-        """
-        Проверяет доступность указанного IP-адреса путем отправки ICMP-запроса (ping).
 
-        Аргументы:
-        ip (str): IP-адрес устройства для проверки доступности.
-
-        Возвращает:
-        bool: True, если устройство доступно, False в противном случае.
-        """
-
+    def check_connection(self,ip):
         try:
             ping_file = f"ping_{ip}.txt"
             os.system(f'ping -n 1 {ip} > "{ping_file}"')
@@ -200,14 +192,16 @@ class MiddleFrame(customtkinter.CTkFrame):
 
             if f"Ответ от {ip}:" in ping:
                 db_manager.add_status(ip, True)
+                # print(f"{ip}")
                 os.remove(ping_file)
                 return True
             else:
+                # print(f"Устройство с IP {ip} не доступно.")
                 db_manager.add_status(ip, False)
                 os.remove(ping_file)
                 return False
         except Exception as e:
-            print(f"Error: {e}")
+            # print(f"Error: {e}")
             return False
 
     def check_connections(self, ip_list):
@@ -220,7 +214,8 @@ class MiddleFrame(customtkinter.CTkFrame):
         Возвращает:
         None
         """
-
+        ip_list.insert(0,"1.1.1.1")
+        print(ip_list)
         # Создание пула потоков
         with concurrent.futures.ThreadPoolExecutor() as executor:
             # Запуск задач для каждого IP-адреса
