@@ -330,7 +330,8 @@ END
             if condition:
                 query += f' WHERE {condition}'
             self.cur.execute(query)
-            return self.cur.fetchall()
+            bla = self.cur.fetchall()
+            return bla
         except pyodbc.Error as e:
             print("An error occurred:", e)
             return []

@@ -11,7 +11,9 @@ from hPyT import *
 from PIL import Image
 from addDevice import *
 from editDevice import *
+from PhotoViewer import *
 from aioBranchOfficeStructuralUnit import *
+from description import *
 
 customtkinter.set_appearance_mode("Dark")
 customtkinter.set_default_color_theme("blue")
@@ -257,9 +259,9 @@ class DownFrame(customtkinter.CTkScrollableFrame):
             if index < 6:
                 customtkinter.CTkLabel(master=tab, text=item, font=("Arial", 12)).grid(row=row + 2, column=index, padx=10, pady=10)
 
-        customtkinter.CTkButton(master=tab, text="Описание", width=85, command=lambda: print(data_with_id[0])).grid(row=row + 2, column=6, pady=10, padx=10)
+        customtkinter.CTkButton(master=tab, text="Описание", width=85, command=lambda: self.description_open(data_with_id[0])).grid(row=row + 2, column=6, pady=10, padx=10)
 
-        customtkinter.CTkButton(master=tab, text="Фото", width=75, command=lambda: print(data_with_id[0])).grid(row=row + 2, column=7, pady=10, padx=10)
+        customtkinter.CTkButton(master=tab, text="Фото", width=75, command=lambda: self.photo_open(data_with_id[0])).grid(row=row + 2, column=7, pady=10, padx=10)
 
         customtkinter.CTkButton(master=tab, text="VNC", width=55, command=lambda: threading.Thread(target=run_vnc_exe, args=(data[0],)).start()).grid(row=row + 2,
                                                                                                                                                       column=10,
@@ -268,7 +270,7 @@ class DownFrame(customtkinter.CTkScrollableFrame):
 
         image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)))
         customtkinter.CTkButton(master=tab, text="", image=customtkinter.CTkImage(Image.open(os.path.join(image_path, "resources\\edit_ico.png")), size=(20, 20)),
-                                width=30, command=lambda: self.EditPc(data_with_id[0])).grid(row=row + 2, column=11, pady=10, padx=10)
+                                width=30, command=lambda: self.edit_pc(data_with_id[0])).grid(row=row + 2, column=11, pady=10, padx=10)
 
         if data[8] == None:
             customtkinter.CTkLabel(master=tab, text="-------", ).grid(row=row + 2, column=9, padx=10, pady=10)
@@ -283,11 +285,25 @@ class DownFrame(customtkinter.CTkScrollableFrame):
         for widget in self.winfo_children():
             widget.destroy()
 
-    def EditPc(self,bas):
+    def edit_pc(self,bas):
 
         """Метод для открытия окна редактирования устройства"""
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.toplevel_window = EditDevice_(self, basic_id=bas)
+        else:
+            self.toplevel_window.focus()
+
+    def description_open(self,bas):
+        """Метод для открытия окна описания устройства"""
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
+            self.toplevel_window = DescriptionViewer(self, basic_id=bas)
+        else:
+            self.toplevel_window.focus()
+
+    def photo_open(self, bas):
+        """Метод для открытия окна фотографий."""
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
+            self.toplevel_window = PhotoViewer(self, basic_id=bas)
         else:
             self.toplevel_window.focus()
 
