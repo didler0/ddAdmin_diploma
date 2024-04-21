@@ -57,19 +57,30 @@ class FirstFrameForChoose(customtkinter.CTkFrame):
         self.combobox2_structural_unit.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
         CTkToolTip(self.combobox2_structural_unit, message="Выберите структурное подразделение.")
 
-        self.combobox3_type_of_device = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly", command=self.load_main_data)
+        self.combobox3_type_of_device = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly", command=self.load_third_data)
         self.combobox3_type_of_device.grid(row=2, column=1, padx=10, pady=10, sticky="nsew")
         CTkToolTip(self.combobox3_type_of_device, message="Выберите тип устройства.")
 
-    def load_main_data(self, choice):
+        self.combobox4_device = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly", command=self.load_main_data)
+        self.combobox4_device.grid(row=3, column=1, padx=10, pady=10, sticky="nsew")
+        CTkToolTip(self.combobox3_type_of_device, message="Выберите тип устройства.")
+
+    def load_third_data(self, choice):
         type_of_device_id = db_manager.get_data("type_of_device", "id", f"name = '{choice}'")[0][0]
         all_basic_info = db_manager.get_data("basic_info", "*", f"type_of_device_id = {type_of_device_id}")
         print(all_basic_info)
 
+        str_data_combob4 = list()
+        for data in all_basic_info:
+            str_data_combob4.append(f"{data[1]} | {data[2]} | {data[3]}")
+
+        print(str_data_combob4)
+        self.FillComboBox(self.combobox4_device,str_data_combob4)
 
         #all_repairs_id = db_manager.get_data("repair", "id", f"basic_info_id = {type_of_device_id}")[0][0]
 
-
+    def load_main_data(self, choice):
+        pass
 
     def load_second_data(self, choice):
         branch_id = db_manager.get_data("branch_office", "id", f"name = '{self.combobox1_branch_office.get()}'")[0][0]
