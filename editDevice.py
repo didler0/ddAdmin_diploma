@@ -456,8 +456,3 @@ class EditDevice_(customtkinter.CTkToplevel):
 
         return values_basic
 
-
-if __name__ == "__main__":
-    root = tkinter.Tk()
-    app = EditDevice_(root)
-    root.mainloop()

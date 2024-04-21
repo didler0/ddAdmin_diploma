@@ -12,6 +12,7 @@ from PIL import Image
 from addDevice import *
 from editDevice import *
 from PhotoViewer import *
+from Repairs import *
 from aioBranchOfficeStructuralUnit import *
 from description import *
 
@@ -26,6 +27,14 @@ with open('database_info.txt', 'r') as file:
 db_info_parts = db_info.split(', ')
 db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
 db_manager.create_tables()
+
+
+def change_appearance_mode_event(new_appearance_mode: str):
+    """Метод для смены цветовой темы"""
+    if new_appearance_mode == "Светлая":
+        customtkinter.set_appearance_mode("Light")
+    elif new_appearance_mode == "Тёмная":
+        customtkinter.set_appearance_mode("Dark")
 
 
 class UpperFrame(customtkinter.CTkFrame):
@@ -57,7 +66,7 @@ class UpperFrame(customtkinter.CTkFrame):
                 button.configure(text_color=button_info["text_color"])
 
         self.AppearanceButton = customtkinter.CTkOptionMenu(
-            self, values=["Тёмная", "Светлая"], command=self.change_appearance_mode_event)
+            self, values=["Тёмная", "Светлая"], command=change_appearance_mode_event)
         CTkToolTip(self.AppearanceButton, message="Смена темы приложения")
         self.AppearanceButton.grid(
             row=0, column=len(button_data), padx=20, pady=(10, 10))
@@ -69,8 +78,6 @@ class UpperFrame(customtkinter.CTkFrame):
         else:
             self.toplevel_window.focus()
 
-
-
     def EditBranch(self):
         """Метод для открытия окна редактирования филиалов"""
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
@@ -78,18 +85,11 @@ class UpperFrame(customtkinter.CTkFrame):
         else:
             self.toplevel_window.focus()
 
-    def change_appearance_mode_event(self, new_appearance_mode: str):
-        """Метод для смены цветовой темы"""
-        if new_appearance_mode == "Светлая":
-            customtkinter.set_appearance_mode("Light")
-        elif new_appearance_mode == "Тёмная":
-            customtkinter.set_appearance_mode("Dark")
-
     def Repairs(self):
         """Метод для открытия окна ремонтов"""
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
 
-            self.toplevel_window = Repairs(self)
+            self.toplevel_window = Repair(self)
         else:
             self.toplevel_window.focus()
 
@@ -184,8 +184,7 @@ class MiddleFrame(customtkinter.CTkFrame):
         data = [str(row[0]) for row in data]
         self.FillComboBox(self.combobox2_structural_unit, data)
 
-
-    def check_connection(self,ip):
+    def check_connection(self, ip):
         try:
             ping_file = f"ping_{ip}.txt"
             os.system(f'ping -n 1 {ip} > "{ping_file}"')
@@ -216,7 +215,7 @@ class MiddleFrame(customtkinter.CTkFrame):
         Возвращает:
         None
         """
-        ip_list.insert(0,"1.1.1.1")
+        ip_list.insert(0, "1.1.1.1")
         print(ip_list)
         # Создание пула потоков
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -252,6 +251,7 @@ class DownFrame(customtkinter.CTkScrollableFrame):
     def create_str(self, tab, data, row):
         def run_vnc_exe(ip_address):
             subprocess.run(["resources\\VNC.exe", ip_address])
+
         data_with_id = data
         data = data[1:]
 
@@ -259,7 +259,8 @@ class DownFrame(customtkinter.CTkScrollableFrame):
             if index < 6:
                 customtkinter.CTkLabel(master=tab, text=item, font=("Arial", 12)).grid(row=row + 2, column=index, padx=10, pady=10)
 
-        customtkinter.CTkButton(master=tab, text="Описание", width=85, command=lambda: self.description_open(data_with_id[0])).grid(row=row + 2, column=6, pady=10, padx=10)
+        customtkinter.CTkButton(master=tab, text="Описание", width=85, command=lambda: self.description_open(data_with_id[0])).grid(row=row + 2, column=6, pady=10,
+                                                                                                                                    padx=10)
 
         customtkinter.CTkButton(master=tab, text="Фото", width=75, command=lambda: self.photo_open(data_with_id[0])).grid(row=row + 2, column=7, pady=10, padx=10)
 
@@ -285,7 +286,7 @@ class DownFrame(customtkinter.CTkScrollableFrame):
         for widget in self.winfo_children():
             widget.destroy()
 
-    def edit_pc(self,bas):
+    def edit_pc(self, bas):
 
         """Метод для открытия окна редактирования устройства"""
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
@@ -293,7 +294,7 @@ class DownFrame(customtkinter.CTkScrollableFrame):
         else:
             self.toplevel_window.focus()
 
-    def description_open(self,bas):
+    def description_open(self, bas):
         """Метод для открытия окна описания устройства"""
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.toplevel_window = DescriptionViewer(self, basic_id=bas)
