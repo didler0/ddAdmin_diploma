@@ -153,6 +153,7 @@ class DatabaseManager:
             self.create_stored_procedure_get_structural_units()
             self.create_stored_procedure_get_info_by_branch_and_structural_unit()
             self.create_trigger()
+            self.create_trigger_last_repair()
         except pyodbc.Error as e:
             print("An error occurred:", e)
             self.conn.rollback()
@@ -239,7 +240,32 @@ END
             print("An error occurred while creating stored procedure:", e)
             self.conn.rollback()
             return False
+    def create_trigger_last_repair(self):
+        try:
+            # Проверка наличия триггера trg_StatusUpdate
+            self.cur.execute("SELECT COUNT(*) FROM sys.triggers WHERE name = 'update_last_repair'")
+            if self.cur.fetchone()[0] == 0:
+                # Создание триггера trg_StatusUpdate (если его нет)
+                self.cur.execute('''
+                    CREATE TRIGGER update_last_repair
+                    ON repair
+                    AFTER INSERT
+                    AS
+                    BEGIN
+                        SET NOCOUNT ON;
+                    
+                        -- Обновляем значение поля last_repair в таблице basic_info для каждой вставленной записи в repair
+                        UPDATE basic_info
+                        SET last_repair = i.repair_date
+                        FROM basic_info b
+                        INNER JOIN inserted i ON b.id = i.basic_info_id;
+                    END;
 
+                ''')
+                self.conn.commit()
+                print("Trigger update_last_repair created successfully.")
+        except Exception as e:
+            print(f"Error creating trigger: {str(e)}")
     def create_trigger(self):
         try:
             # Проверка наличия триггера trg_StatusUpdate

@@ -236,7 +236,7 @@ class DownFrame(customtkinter.CTkScrollableFrame):
     """"Класс для нижнего фрейма"""
 
     def __init__(self, master):
-        super().__init__(master, height=400)
+        super().__init__(master)
         self.toplevel_window = None
         self.grid_columnconfigure(0, weight=1)
 
@@ -321,15 +321,15 @@ class App(customtkinter.CTk):
         self.title("ddAdmin")
         self.geometry(f"{App.WIDTH}x{App.HEIGHT}")
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
-        maximize_minimize_button.hide(self)
+
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure((1), weight=0)
 
-        maximize_minimize_button.hide(self)
-
+        self.grid_rowconfigure(2, weight=1)
         self.frame_down = DownFrame(self)
         self.frame_down.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+
 
         self.frame_middle = MiddleFrame(self, self.frame_down)
         self.frame_middle.grid(row=1, column=0, padx=10, pady=10)
