@@ -46,7 +46,7 @@ class Repair(customtkinter.CTkToplevel):
         self.first = FirstFrame(self.frame, self.second)
         self.first.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
-        self.last = ThirdFrame(self.frame)
+        self.last = ThirdFrame(self.frame, self.second,self.first)
         self.last.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
 
 
@@ -64,37 +64,60 @@ class SecondFrame(customtkinter.CTkFrame):
         customtkinter.CTkLabel(master=self, text="Описание").grid(row=2, column=0, padx=10, pady=10, sticky="ew")
         self.DecriptiontextBox = customtkinter.CTkTextbox(master=self, height=90)
         self.DecriptiontextBox.grid(row=2, column=1, columnspan=2, padx=10, pady=10, sticky="ew")
+        CTkToolTip(self.DecriptiontextBox, message="Введите описание")
 
         customtkinter.CTkLabel(master=self, text="Дата ремонта").grid(row=3, column=0, padx=10, pady=10, sticky="ew")
         self.DataOfRepaor_entry = customtkinter.CTkEntry(master=self, placeholder_text="ГГГГ-ММ-ДД")
         self.DataOfRepaor_entry.grid(row=3, column=1, padx=10, pady=10, sticky="ew")
+        CTkToolTip(self.DataOfRepaor_entry, message="Введите дату ремонта")
 
         image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)))
         self.image_icon_image = customtkinter.CTkImage(Image.open(os.path.join(image_path, "resources\\calendarICO.png")), size=(20, 20))
-        self.CalendarOpenButton = customtkinter.CTkButton(master=self, text="Выбрать дату", image=self.image_icon_image,command=lambda: [self.select_date()])
+        self.CalendarOpenButton = customtkinter.CTkButton(master=self, text="Выбрать дату", image=self.image_icon_image, command=lambda: [self.select_date()])
         self.CalendarOpenButton.grid(row=3, column=2, pady=5, padx=10, sticky="ew")
+        CTkToolTip(self.CalendarOpenButton, message="Открыть окно для выбора даты")
 
-        customtkinter.CTkLabel(master=self, text="Открыть папку с документами к компьютеру").grid(row=4, columnspan=2, column=0, padx=10, pady=10,sticky="ew")
+        customtkinter.CTkLabel(master=self, text="Открыть папку с документами к выбранному ремонту.").grid(row=4, columnspan=2, column=0, padx=10, pady=10, sticky="ew")
         self.OpenFolderRepairButton = customtkinter.CTkButton(master=self, text="Открыть папку", command=lambda: self.open_folder())
         self.OpenFolderRepairButton.grid(row=4, column=2, pady=5, padx=10, sticky="ew")
+        CTkToolTip(self.OpenFolderRepairButton, message="Открыть папку с документами к выбранному ремонту.")
+
     def clear_whole_data(self):
         self.DataOfRepaor_entry.delete(0, tkinter.END)
         self.DecriptiontextBox.delete("1.0", tkinter.END)
 
     def open_folder(self):
-        choice = self.combobox1_repair.get()
-        parts = choice.split('|')
-        repair_id = [part.strip() for part in parts]
-        repair_id = repair_id[0]
-        path = db_manager.get_data("repair", "document_path", f"id = {repair_id}")[0][0]
+        try:
+            choice = self.combobox1_repair.get()
+            if not choice:
+                # Если выбор пустой, выводим предупреждение
+                CTkMessagebox(title="Предупреждение", message="Не выбран ремонт для открытия папки.", icon="warning")
+                return
 
+            parts = choice.split('|')
+            repair_id = [part.strip() for part in parts]
+            repair_id = repair_id[0]
+            # Получаем путь к папке из базы данных
+            path = db_manager.get_data("repair", "document_path", f"id = {repair_id}")[0][0]
 
-    def load_repair(self,choice):
+            if not path:
+                # Если путь не найден, выводим сообщение об ошибке
+                CTkMessagebox(title="Ошибка", message="Папка для этого ремонта не найдена.", icon="cancel")
+                return
+
+            # Открываем папку
+            os.startfile(f"repairs\\{path}")
+        except Exception as e:
+            # Выводим сообщение об ошибке с использованием CTkMessagebox
+            CTkMessagebox(title="Ошибка", message="Произошла ошибка при открытии папки.", icon="cancel")
+            print(f"An error occurred: {e}")
+
+    def load_repair(self, choice):
         self.clear_whole_data()
         parts = choice.split('|')
         repair_id = [part.strip() for part in parts]
         repair_id = repair_id[0]
-        data = db_manager.get_data("repair","*",f"id = {repair_id}")
+        data = db_manager.get_data("repair", "*", f"id = {repair_id}")
         data_for_inset = list()
         for text in data[0]:
             data_for_inset.append(text)
@@ -104,9 +127,7 @@ class SecondFrame(customtkinter.CTkFrame):
 
 
 
-
-
-def select_date(self):
+    def select_date(self):
         try:
             if hasattr(self, 'additionalWIN') and self.additionalWIN.winfo_exists():
                 self.additionalWIN.focus()
@@ -132,7 +153,7 @@ def select_date(self):
 
 
 class FirstFrame(customtkinter.CTkFrame):
-    def __init__(self,  master, secondFrameInstance):
+    def __init__(self, master, secondFrameInstance):
         super().__init__(master)
         self.secondFrameInstance = secondFrameInstance
 
@@ -184,8 +205,8 @@ class FirstFrame(customtkinter.CTkFrame):
             str_data_combobox1_repair = list()
             for data in all_repairs:
                 str_data_combobox1_repair.append(f"{data[0]} | {data[3]}")
-            self.FillComboBox(self.secondFrameInstance.combobox1_repair,str_data_combobox1_repair)
-            #self.secondFrameInstance.combobox1_repair.get()
+            self.FillComboBox(self.secondFrameInstance.combobox1_repair, str_data_combobox1_repair)
+            # self.secondFrameInstance.combobox1_repair.get()
 
         except Exception as e:
             CTkMessagebox(title="Ошибка", message=f"Возможно не добавлено ни одного ремонта.\n{e}", icon="cancel")
@@ -211,8 +232,12 @@ class FirstFrame(customtkinter.CTkFrame):
 
 
 class ThirdFrame(customtkinter.CTkFrame):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, master, secondFrameInstance,firstFrameInstance):
+        super().__init__(master)
+        self.secondFrameInstance = secondFrameInstance
+        self.firstFrameInstance = firstFrameInstance
+
+
         self.grid_columnconfigure((0, 1, 2), weight=1)
         self.configure(border_color="red", border_width=1)
 
@@ -226,13 +251,75 @@ class ThirdFrame(customtkinter.CTkFrame):
         del_repair_button.grid(row=0, column=2, pady=5, padx=10, sticky="ew")
 
     def add_repair(self):
-        pass
+        descr = self.secondFrameInstance.DecriptiontextBox.get("1.0", "end-1c")
+        date = self.secondFrameInstance.DataOfRepaor_entry.get()
+        choice = self.firstFrameInstance.combobox4_device.get()
+
+        # Проверка на пустоту полей
+        if not descr or not date or not choice:
+            CTkMessagebox(title="Предупреждение", message="Необходимо заполнить все поля.", icon="warning")
+            return
+
+        parts = choice.split('|')
+        result_list = [part.strip() for part in parts]
+
+        try:
+            name_for_folder = f"{date}_{result_list[3]}"
+            db_manager.insert_data("repair", "basic_info_id, description, repair_date, document_path",
+                                   f"'{result_list[0]}', '{descr}', '{date}', '{name_for_folder}'")
+            print(name_for_folder)
+            self.create_repair_folder(name_for_folder)
+            os.startfile(f"repairs\\{name_for_folder}")
+            CTkMessagebox(title="Успех", message="Ремонт успешно добавлен!", icon="check", option_1="Ok")
+            self.secondFrameInstance.clear_whole_data()
+        except Exception as e:
+            # Выводим сообщение об ошибке с использованием CTkMessagebox
+            CTkMessagebox(title="Ошибка", message="Произошла ошибка при добавлении ремонта.", icon="cancel")
+            print(f"An error occurred: {e}")
 
     def save_changes_repair(self):
         pass
 
     def delete_repair(self):
         pass
+
+    def create_repair_folder(self, name):
+        try:
+            # Получите путь к папке repairs
+            repairs_folder = "repairs"
+            # Проверьте, существует ли папка repairs, и если нет, создайте ее
+            if not os.path.exists(repairs_folder):
+                os.makedirs(repairs_folder)
+            # Создайте папку для нового ремонта на основе его ID
+            repair_folder_path = os.path.join(repairs_folder, str(name))
+            if not os.path.exists(repair_folder_path):
+                os.makedirs(repair_folder_path)
+            print(f"Folder for repair {name} created successfully.")
+            return repair_folder_path
+        except Exception as e:
+            CTkMessagebox(title="Ошибка", message="Ошибка создания папки! ", icon="cancel")
+            return None
+
+    def OpenFolder(self):
+        currVal = self.combobox1.get()
+        parts = currVal.split('|')  # Разделить строку на подстроки по символу '|'
+        if len(parts) > 0:
+            repair_id = parts[0].strip()  # Получить первую подстроку и удалить лишние пробелы
+
+            try:
+                repair_id = int(repair_id)  # Преобразовать строку в целое число
+                # Формирование пути к папке ремонта
+                repair_folder_path = os.path.join("repairs", str(repair_id))
+
+                # Проверка существования папки
+                if os.path.exists(repair_folder_path):
+                    # Открытие папки в системном проводнике
+                    os.startfile(repair_folder_path)
+                else:
+                    CTkMessagebox(title="Ошибка", message="Папка ремонта не существует!", icon="cancel")
+
+            except ValueError:
+                CTkMessagebox(title="Ошибка", message="Возможно папка была создана некорректно!", icon="cancel")
 
 
 if __name__ == "__main__":
