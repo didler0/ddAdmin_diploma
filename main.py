@@ -15,6 +15,7 @@ from PhotoViewer import *
 from Repairs import *
 from aioBranchOfficeStructuralUnit import *
 from description import *
+from import_from_excel import *
 
 customtkinter.set_appearance_mode("Dark")
 customtkinter.set_default_color_theme("blue")
@@ -49,6 +50,7 @@ class UpperFrame(customtkinter.CTkFrame):
         button_data = [
             {"text": "Добавить устройство", "command": self.AddPc},
             {"text": "Редактировать филиалы", "command": self.EditBranch},
+            {"text": "Импорт из Excel", "command": self.ImportFromExcel},
             {"text": "Формирование отчетов", "command": self.ExportPc},
             {"text": "Ремонты", "command": self.Repairs, "fg_color": "#FF8C19", "hover_color": "#4DFFFF", "text_color": "black"}
         ]
@@ -92,7 +94,13 @@ class UpperFrame(customtkinter.CTkFrame):
             self.toplevel_window = Repair(self)
         else:
             self.toplevel_window.focus()
+    def ImportFromExcel(self):
+        """Метод для открытия окна Импрота из экселя"""
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
 
+            self.toplevel_window = ImportDataFromExcel(self)
+        else:
+            self.toplevel_window.focus()
     def ExportPc(self):
         """Метод для открытия окна экспорта данных"""
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
@@ -161,6 +169,14 @@ class MiddleFrame(customtkinter.CTkFrame):
 
     def reload_all(self):
         try:
+            data = db_manager.get_data("branch_office", "name", "")
+            data = [str(row[0]) for row in data]
+            self.FillComboBox(self.combobox1_branch_office, data)
+        except Exception as e:
+            CTkMessagebox(title="Ошибка", message=f"Произошла ошбика при обновлении филиалов и структурных подразделений!\n{e}", icon="warning")
+            return 0
+        try:
+
             branch_id = db_manager.get_data("branch_office", "id", f"name = '{self.combobox1_branch_office.get()}'")[0][0]
             structural_unit_id = db_manager.get_data("structural_unit", "id", f"name = '{self.combobox2_structural_unit.get()}'")[0][0]
             result = db_manager.exec_procedure("GetInfoByBranchAndStructuralUnit", branch_id, structural_unit_id)
@@ -171,7 +187,7 @@ class MiddleFrame(customtkinter.CTkFrame):
             CTkMessagebox(title="Успех", message="Статусы успешно обновлены! \nДля обновления заново выберите нужный филиал и структурное подразделение.",
                           icon="info")
         except Exception as e:
-            CTkMessagebox(title="Ошибка", message=f"Произошла ошбика!\n{e}", icon="warning")
+            CTkMessagebox(title="Ошибка", message=f"Произошла ошбика при обновлении статусов!\n{e}", icon="warning")
             return 0
 
     def FillComboBox(self, combobox, data_):
@@ -185,6 +201,15 @@ class MiddleFrame(customtkinter.CTkFrame):
         self.FillComboBox(self.combobox2_structural_unit, data)
 
     def check_connection(self, ip):
+        """
+                Метод для проверки соединения с указанным IP-адресом.
+
+                Параметры:
+                ip (строка): IP-адрес для проверки соединения.
+
+                Возвращает:
+                bool: True, если удалось установить соединение с указанным IP, иначе False.
+                """
         try:
             ping_file = f"ping_{ip}.txt"
             os.system(f'ping -n 1 {ip} > "{ping_file}"')

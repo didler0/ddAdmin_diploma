@@ -3,7 +3,7 @@ import tkinter
 from dataBase import DatabaseManager
 from CTkMessagebox import CTkMessagebox
 import CTkAddDelCombobox
-
+from CTkPDFViewer import *
 
 
 with open('database_info.txt', 'r') as file:
@@ -47,13 +47,13 @@ class AddDevice_(customtkinter.CTkToplevel):
         self.geometry("600x595")
 
         # Метки для базовой информации
-        labels_basic = ["IP Адрес", "Название", "Сетевое имя", "Тип устройства", "Место установки", "Описание",
-                        "Материально ответственный", "Филиал", "Структурное подразделение"]
+        labels_basic = ["IP Адрес *", "Название *", "Сетевое имя *", "Тип устройства *", "Место установки *", "Описание *",
+                        "Материально ответственный *", "Филиал *", "Структурное подразделение *"]
 
         # Создание виджетов для базовой информации
         self.widgetsBasic = []
         # Метки для детальной информации
-        labels_detail = ["Инвентарный №", "Серийный №", "MAC - адрес", "Операционная система", "Год покупки", "Месяцы гарантии"]
+        labels_detail = ["Инвентарный № *", "Серийный № *", "MAC - адрес *", "Операционная система *", "Год покупки *", "Месяцы гарантии *"]
         self.widgetsDetail = []
         # Метки для информации о компонентах
         labels_components = ["Процессор", "ОЗУ", "Материнская плата", "Видеокарта", "Блок питания", "Сетевая карта",
@@ -62,7 +62,7 @@ class AddDevice_(customtkinter.CTkToplevel):
 
         self.grid_columnconfigure(0, weight=1)
         self.frame = customtkinter.CTkScrollableFrame(self, height=520)
-        self.frame.grid(row=0, column=0, padx=10, pady=10, sticky='nsew')
+        self.frame.grid(row=0, column=0, padx=10, pady=10, sticky='nsew',columnspan=2)
 
         self.tabview = customtkinter.CTkTabview(master=self.frame, height=515, width=550)
         self.tabview.pack()
@@ -79,6 +79,18 @@ class AddDevice_(customtkinter.CTkToplevel):
         add_data_button = customtkinter.CTkButton(master=self, text="Добавить", command=lambda: self.add_whole_data_to_bd())
         add_data_button.grid(row=1, column=0, padx=10, pady=10, sticky='nsew')
 
+        # Кнопка информации
+        info_button = customtkinter.CTkButton(master=self, text="ИНФО",width=50, command=lambda: self.open_info_popup())
+        info_button.grid(row=1, column=1, padx=10, pady=10, sticky='nsew')
+
+
+    def open_info_popup(self):
+        CTkMessagebox(title="Информация",
+                      message=" Поля, требующие заполнения, отмечены символом '*'.\n"
+                              " Заполнение всех полей во вкладках 'Базовая информация' и 'Детальное описание' является обязательным.\n"
+                              " Поля во вкладке 'Компоненты' не являются обязательными и могут быть оставлены пустыми.",
+                      icon="info", option_1="Ok")
+
     def create_basic_info_tab(self, labels_basic):
         """
         Создание вкладки для базовой информации.
@@ -91,38 +103,38 @@ class AddDevice_(customtkinter.CTkToplevel):
             label = customtkinter.CTkLabel(master=self.tabview.tab("Базовая информация"), text=text, font=("Arial", 12))
             label.grid(row=i, column=0, padx=10, pady=10, sticky="ew")
 
-            if text == "IP Адрес":
+            if text == "IP Адрес *":
                 entry = customtkinter.CTkEntry(master=self.tabview.tab("Базовая информация"), placeholder_text="IP Адрес | 255.255.255.255")
                 entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(entry)
-            elif text == "Место установки":
+            elif text == "Место установки *":
                 data = db_manager.get_data("place_of_installation", "name", "")
                 data = [str(row[0]) for row in data]
                 type_of_device = CTkAddDelCombobox.ComboBoxWithButtons(table="place_of_installation", master=self.tabview.tab("Базовая информация"), values=data)
                 type_of_device.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(type_of_device)
-            elif text == "Сетевое имя":
+            elif text == "Сетевое имя *":
                 entry = customtkinter.CTkEntry(master=self.tabview.tab("Базовая информация"), placeholder_text="Сетевое имя")
                 entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(entry)
-            elif text == "Тип устройства":
+            elif text == "Тип устройства *":
                 data = db_manager.get_data("type_of_device", "name", "")
                 data = [str(row[0]) for row in data]
                 type_of_device = CTkAddDelCombobox.ComboBoxWithButtons(table="type_of_device", master=self.tabview.tab("Базовая информация"), values=data)
                 type_of_device.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(type_of_device)
-            elif text == "Филиал":
+            elif text == "Филиал *":
                 data = db_manager.get_data("branch_office", "name", "")
                 data = [str(row[0]) for row in data]
                 combobox1 = customtkinter.CTkComboBox(master=self.tabview.tab("Базовая информация"), values=[" "], state="readonly", command=self.load_data)
                 combobox1.grid(row=i, column=1, padx=10, pady=10, sticky="nsew")
                 self.FillComboBox(combobox1, data)
                 self.widgetsBasic.append(combobox1)
-            elif text == "Структурное подразделение":
+            elif text == "Структурное подразделение *":
                 self.combobox_structural_unit = customtkinter.CTkComboBox(master=self.tabview.tab("Базовая информация"), values=[" "], state="readonly")
                 self.combobox_structural_unit.grid(row=i, column=1, padx=10, pady=10, sticky="nsew")
                 self.widgetsBasic.append(self.combobox_structural_unit)
-            elif text == "Материально ответственный":
+            elif text == "Материально ответственный *":
                 data = db_manager.get_data("material_resp_person", "name", "")
                 data = [str(row[0]) for row in data]
                 structural_unit = CTkAddDelCombobox.ComboBoxWithButtons(table="material_resp_person", master=self.tabview.tab("Базовая информация"), values=data)
@@ -183,7 +195,9 @@ class AddDevice_(customtkinter.CTkToplevel):
         for widget in self.widgetsComponents:
             if isinstance(widget, customtkinter.CTkEntry):
                 value = widget.get()
-                widget.delete(0, customtkinter.END)
+                # Если значение равно пробелу, установите его на None
+                if value.strip() == "":
+                    value = None
             else:
                 value = None
             values_component.append(value)
@@ -201,7 +215,9 @@ class AddDevice_(customtkinter.CTkToplevel):
         for widget in self.widgetsDetail:
             if isinstance(widget, customtkinter.CTkEntry):
                 value = widget.get()
-                widget.delete(0, customtkinter.END)
+                # Если значение равно пробелу, установите его на None
+                if value.strip() == "":
+                    value = None
             else:
                 value = None
             values_detail.append(value)
@@ -219,15 +235,27 @@ class AddDevice_(customtkinter.CTkToplevel):
         for widget in self.widgetsBasic:
             if isinstance(widget, customtkinter.CTkEntry):
                 value = widget.get()
-                widget.delete(0, customtkinter.END)
+                # Если значение равно пробелу, установите его на None
+                if value.strip() == "":
+                    value = None
+
             elif isinstance(widget, customtkinter.CTkTextbox):
                 value = widget.get("1.0", "end-1c")
-                widget.delete("1.0", "end-1c")
+                # Если значение равно пробелу, установите его на None
+                if value.strip() == "":
+                    value = None
+
             elif isinstance(widget, CTkAddDelCombobox.ComboBoxWithButtons):
                 value = widget.get_current_value()
-                widget.clear_data()
+                # Если значение равно пробелу, установите его на None
+                if value.strip() == "":
+                    value = None
+
             elif isinstance(widget,customtkinter.CTkComboBox):
                 value = widget.get()
+                # Если значение равно пробелу, установите его на None
+                if value.strip() == "":
+                    value = None
             else:
                 value = None
             values_basic.append(value)
@@ -267,6 +295,10 @@ class AddDevice_(customtkinter.CTkToplevel):
             values_details = self.get_data_from_details()
             values_basic = self.get_data_from_basic()
 
+            # Проверка наличия всех необходимых данных
+            if not all(values_details) or not all(values_basic):
+                raise ValueError("Не все необходимые поля заполнены")
+
             # Список кортежей, где каждый кортеж представляет столбец, который нужно обновить, и соответствующую таблицу
             columns_to_update = [
                 (3, "type_of_device", "id", values_basic),
@@ -283,39 +315,30 @@ class AddDevice_(customtkinter.CTkToplevel):
                 if id_result:
                     values[index] = id_result[0][0]  # Обновляем значение на id из таблицы
                 else:
-                    print(f"Could not find id for {table} with name '{value}'")
+                    raise ValueError(f"Не удалось найти id для {table} с именем '{value}'")
 
             last_component_id = db_manager.get_last_id("component")
             values_details.insert(0, last_component_id)
-            try:
-                db_manager.insert_data_component(*values_component)
-            except Exception as e:
-                # Отображение окна с сообщением об ошибке
-                CTkMessagebox(title="Ошибка", message="Ошибка при добавлении компьютера: " + str(e), icon="cancel")
-                print(f"An error occurred while adding computer: {e}")
-            try:
-                db_manager.insert_data_detail_info(*values_details)
-            except Exception as e:
-                # Отображение окна с сообщением об ошибке
-                CTkMessagebox(title="Ошибка", message="Ошибка при добавлении компьютера: " + str(e), icon="cancel")
-                print(f"An error occurred while adding computer: {e}")
+            db_manager.insert_data_component(*values_component)
+            db_manager.insert_data_detail_info(*values_details)
 
             last_details_id = db_manager.get_last_id("detail_info")
-            try:
-                values_basic.append(last_details_id)
-                db_manager.insert_data_basic_info(*values_basic)
-            except Exception as e:
-                # Отображение окна с сообщением об ошибке
-                CTkMessagebox(title="Ошибка", message="Ошибка при добавлении компьютера: " + str(e), icon="cancel")
-                print(f"An error occurred while adding computer: {e}")
+            values_basic.append(last_details_id)
+            db_manager.insert_data_basic_info(*values_basic)
 
             # Отображение окна с сообщением об успешном добавлении
             CTkMessagebox(title="Успех",
                           message="Компьютер успешно добавлен!\n Если была добавлена новое место расположения или был добавлен ПЕРВЫЙ компьютер - перезапустите приложение",
                           icon="check", option_1="Ok")
+            self.clear_whole_data()
+
+        except ValueError as ve:
+            # Отображение окна с сообщением об ошибке в случае незаполненных полей
+            CTkMessagebox(title="Ошибка", message=str(ve), icon="cancel")
+            print(f"An error occurred while adding computer: {ve}")
 
         except Exception as e:
-            # Отображение окна с сообщением об ошибке
+            # Отображение окна с сообщением об общей ошибке
             CTkMessagebox(title="Ошибка", message="Ошибка при добавлении компьютера: " + str(e), icon="cancel")
             print(f"An error occurred while adding computer: {e}")
 

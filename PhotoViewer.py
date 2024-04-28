@@ -39,7 +39,7 @@ class PhotoViewer(customtkinter.CTkToplevel):
             self.minsize(460, 730)
             self.maxsize(460, 730)
             maximize_minimize_button.hide(self)
-            self.title(f"Photo Viewer for {self.photo_id}")
+            self.title(f"Просмотр фото для {self.photo_id}")
             self.focus()
             images = db_manager.get_data("photo", "*", f"basic_info_id = {self.photo_id}")
             image_paths = self.get_image_paths(images)

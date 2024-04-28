@@ -19,14 +19,14 @@ class DatabaseManager:
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[branch_office]') AND type in (N'U'))
                                 CREATE TABLE branch_office (
                                     id INT PRIMARY KEY IDENTITY(1,1),
-                                    name NVARCHAR(255) UNIQUE
+                                    name NVARCHAR(255) UNIQUE NOT NULL
                                 )''')
 
             # Создание таблицы structural_unit
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[structural_unit]') AND type in (N'U'))
                                 CREATE TABLE structural_unit (
                                     id INT PRIMARY KEY IDENTITY(1,1),
-                                    name NVARCHAR(255) UNIQUE
+                                    name NVARCHAR(255) UNIQUE NOT NULL
                                 )''')
 
             # Создание таблицы branch_structural_unit
@@ -43,20 +43,20 @@ class DatabaseManager:
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[type_of_device]') AND type in (N'U'))
                                             CREATE TABLE type_of_device (
                                                 id INT PRIMARY KEY IDENTITY(1,1),
-                                                name NVARCHAR(255) UNIQUE
+                                                name NVARCHAR(255) UNIQUE NOT NULL
                                             )''')
 
             # Создание таблицы place_of_installation
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[place_of_installation]') AND type in (N'U'))
                                                         CREATE TABLE place_of_installation (
                                                             id INT PRIMARY KEY IDENTITY(1,1),
-                                                            name NVARCHAR(255) UNIQUE
+                                                            name NVARCHAR(255) UNIQUE NOT NULL
                                                         )''')
             # Создание таблицы material_resp_person
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[material_resp_person]') AND type in (N'U'))
                                                                     CREATE TABLE material_resp_person (
                                                                         id INT PRIMARY KEY IDENTITY(1,1),
-                                                                        name NVARCHAR(255) UNIQUE
+                                                                        name NVARCHAR(255) UNIQUE NOT NULL
                                                                     )''')
 
             # Создание таблицы component
@@ -83,13 +83,13 @@ class DatabaseManager:
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[detail_info]') AND type in (N'U'))
                                 CREATE TABLE detail_info (
                                     id INT PRIMARY KEY IDENTITY(1,1),
-                                    component_id INT,
-                                    inventory_number NVARCHAR(MAX),
-                                    serial_number NVARCHAR(MAX),
-                                    mac_address NVARCHAR(MAX),
-                                    oper_system NVARCHAR(MAX),
-                                    year_of_purchase INT,
-                                    month_of_warranty INT,
+                                    component_id INT NOT NULL,
+                                    inventory_number NVARCHAR(MAX) NOT NULL,
+                                    serial_number NVARCHAR(MAX) NOT NULL,
+                                    mac_address NVARCHAR(MAX) NOT NULL,
+                                    oper_system NVARCHAR(MAX) NOT NULL,
+                                    year_of_purchase INT NOT NULL,
+                                    month_of_warranty INT NOT NULL,
                                     FOREIGN KEY(component_id) REFERENCES component(id) ON DELETE CASCADE ON UPDATE CASCADE
                                 )''')
 
@@ -97,19 +97,19 @@ class DatabaseManager:
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[basic_info]') AND type in (N'U'))
                                 CREATE TABLE basic_info (
                                     id INT PRIMARY KEY IDENTITY(1,1),
-                                    ip NVARCHAR(15),
-                                    name NVARCHAR(MAX),
-                                    network_name NVARCHAR(MAX),
-                                    type_of_device_id INT,
-                                    place_of_installation_id INT,
-                                    description NVARCHAR(MAX),
-                                    material_resp_person_id INT,
+                                    ip NVARCHAR(15) NOT NULL,
+                                    name NVARCHAR(MAX) NOT NULL,
+                                    network_name NVARCHAR(MAX) NOT NULL,
+                                    type_of_device_id INT NOT NULL,
+                                    place_of_installation_id INT NOT NULL,
+                                    description NVARCHAR(MAX)NOT NULL,
+                                    material_resp_person_id INT NOT NULL,
                                     last_status BIT,
                                     data_status datetime,
                                     last_repair DATE,
-                                    detail_info_id INT,
-                                    branch_id INT,
-                                    structural_unit_id INT,
+                                    detail_info_id INT NOT NULL,
+                                    branch_id INT NOT NULL,
+                                    structural_unit_id INT NOT NULL,
                                     FOREIGN KEY(detail_info_id) REFERENCES detail_info(id) ON DELETE CASCADE ON UPDATE CASCADE,
                                     FOREIGN KEY(branch_id) REFERENCES branch_office(id) ON DELETE CASCADE ON UPDATE CASCADE,
                                     FOREIGN KEY(structural_unit_id) REFERENCES structural_unit(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -122,9 +122,9 @@ class DatabaseManager:
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[repair]') AND type in (N'U'))
                                 CREATE TABLE repair (
                                     id INT PRIMARY KEY IDENTITY(1,1),
-                                    basic_info_id INT,
-                                    description NVARCHAR(100),
-                                    repair_date DATE,
+                                    basic_info_id INT NOT NULL,
+                                    description NVARCHAR(100) NOT NULL,
+                                    repair_date DATE NOT NULL,
                                     document_path NVARCHAR(100),
                                     FOREIGN KEY(basic_info_id) REFERENCES basic_info(id) ON DELETE CASCADE ON UPDATE CASCADE
                                 )''')
@@ -133,8 +133,8 @@ class DatabaseManager:
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[photo]') AND type in (N'U'))
                                 CREATE TABLE photo (
                                     id INT PRIMARY KEY IDENTITY(1,1),
-                                    basic_info_id INT,
-                                    path NVARCHAR(MAX),
+                                    basic_info_id INT NOT NULL,
+                                    path NVARCHAR(MAX) NOT NULL,
                                     FOREIGN KEY(basic_info_id) REFERENCES basic_info(id) ON DELETE CASCADE ON UPDATE CASCADE
                                 )''')
 
@@ -142,9 +142,9 @@ class DatabaseManager:
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[status]') AND type in (N'U'))
                                 CREATE TABLE status (
                                     id INT PRIMARY KEY IDENTITY(1,1),
-                                    basic_info_id INT,
-                                    status_ INT,
-                                    status_date DATETIME,
+                                    basic_info_id INT ,
+                                    status_ INT ,
+                                    status_date DATETIME ,
                                     FOREIGN KEY(basic_info_id) REFERENCES basic_info(id) ON DELETE CASCADE ON UPDATE CASCADE
                                 )''')
 
