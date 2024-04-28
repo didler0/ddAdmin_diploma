@@ -286,7 +286,7 @@ class ThirdFrame(customtkinter.CTkFrame):
             db_manager.insert_data("repair", "basic_info_id, description, repair_date, document_path",
                                    f"'{result_list[0]}', '{descr}', '{date}', '{repair_folder_path}'")
 
-            print(name_for_folder)
+
             os.startfile(repair_folder_path)
 
             # Выводим сообщение об успешном добавлении ремонта

@@ -16,6 +16,7 @@ from Repairs import *
 from aioBranchOfficeStructuralUnit import *
 from description import *
 from import_from_excel import *
+from report import *
 
 customtkinter.set_appearance_mode("Dark")
 customtkinter.set_default_color_theme("blue")

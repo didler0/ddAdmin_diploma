@@ -337,7 +337,7 @@ END
     def close_connection(self):
         """Метод для закрытия соединения с базой данных"""
         self.conn.close()
-        print("suck")
+        print("closed")
 
     def get_data(self, table_name, columns='*', condition=''):
         """
