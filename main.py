@@ -5,6 +5,8 @@ import threading
 import subprocess
 import time
 from tkinter import messagebox
+
+import customtkinter as customtkinter
 from CTkToolTip import *
 from ctkcomponents import *
 from hPyT import *

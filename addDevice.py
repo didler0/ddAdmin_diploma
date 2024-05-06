@@ -3,7 +3,7 @@ import tkinter
 from dataBase import DatabaseManager
 from CTkMessagebox import CTkMessagebox
 import CTkAddDelCombobox
-from CTkPDFViewer import *
+
 
 
 with open('database_info.txt', 'r') as file:
