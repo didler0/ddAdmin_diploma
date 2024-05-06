@@ -20,9 +20,7 @@ from report import *
 
 customtkinter.set_appearance_mode("Dark")
 customtkinter.set_default_color_theme("blue")
-# Сохранение строки в файл
-with open('database_info.txt', 'w') as file:
-    file.write("DDLAPTOP\\SQLEXPRESS, PCC")
+
 
 with open('database_info.txt', 'r') as file:
     db_info = file.read().strip()
