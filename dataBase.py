@@ -152,6 +152,7 @@ class DatabaseManager:
 
             self.create_stored_procedure_get_structural_units()
             self.create_stored_procedure_get_info_by_branch_and_structural_unit()
+            self.create_stored_procedure_GetBasicInfoStatusBetweenDates()
             self.create_trigger()
             self.create_trigger_last_repair()
         except pyodbc.Error as e:
@@ -184,6 +185,39 @@ class DatabaseManager:
                     JOIN structural_unit su ON bsu.structural_unit_id = su.id
                     WHERE bsu.branch_office_id = @branchOfficeId
                 END
+            """
+            self.cur.execute(procedure_query)
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred while creating stored procedure:", e)
+            self.conn.rollback()
+            return False
+
+    def create_stored_procedure_GetBasicInfoStatusBetweenDates(self):
+        """
+        Метод для создания хранимой процедуры GetBasicInfoStatusBetweenDates.
+
+        Returns:
+            bool: True, если процедура была успешно создана, в противном случае - False.
+        """
+        try:
+            procedure_query = """
+                            CREATE PROCEDURE GetBasicInfoStatusBetweenDates
+                @date_start DATE,
+                @date_end DATE
+            AS
+            BEGIN
+                SELECT S.basic_info_id,
+                       S.status_,
+                       S.status_date,
+                       B.name AS basic_info_name,
+                       P.name AS place_of_installation_name
+                FROM status S
+                JOIN basic_info B ON B.id = S.basic_info_id
+                JOIN place_of_installation P ON P.id = B.place_of_installation_id
+                WHERE S.status_date BETWEEN @date_start AND @date_end;
+            END
             """
             self.cur.execute(procedure_query)
             self.conn.commit()
@@ -240,6 +274,7 @@ END
             print("An error occurred while creating stored procedure:", e)
             self.conn.rollback()
             return False
+
     def create_trigger_last_repair(self):
         try:
             # Проверка наличия триггера trg_StatusUpdate
@@ -266,6 +301,7 @@ END
                 print("Trigger update_last_repair created successfully.")
         except Exception as e:
             print(f"Error creating trigger: {str(e)}")
+
     def create_trigger(self):
         try:
             # Проверка наличия триггера trg_StatusUpdate
@@ -295,6 +331,7 @@ END
                 print("Trigger trg_StatusUpdate created successfully.")
         except Exception as e:
             print(f"Error creating trigger: {str(e)}")
+
     def exec_procedure(self, procedure_name, *args):
         """
         Метод для выполнения хранимой процедуры с передачей аргументов.
@@ -331,8 +368,6 @@ END
         self.cur.execute(query, (branch_office, str_unit))
         result = self.cur.fetchone()[0]
         return result > 0
-
-
 
     def close_connection(self):
         """Метод для закрытия соединения с базой данных"""
@@ -409,7 +444,7 @@ END
             return False
 
     def insert_data_basic_info(self, ip, name, network_name, type_of_device_id, place_of_installation_id,
-                               description, material_resp_person_id, branch_id, structural_unit_id,detail_info_id):
+                               description, material_resp_person_id, branch_id, structural_unit_id, detail_info_id):
         try:
             query = f"INSERT INTO basic_info (ip, name, network_name, type_of_device_id, place_of_installation_id, " \
                     f"description, material_resp_person_id,detail_info_id, " \
@@ -424,7 +459,7 @@ END
             self.conn.rollback()
             return False
 
-    def get_last_id(self,table):
+    def get_last_id(self, table):
         try:
             # Получаем последний добавленный идентификатор
             self.cur.execute(f"SELECT IDENT_CURRENT('{table}')")
@@ -433,6 +468,7 @@ END
         except Exception as e:
             print(f"Error retrieving last basic_info id: {str(e)}")
             return None
+
     def insert_data_detail_info(self, component_id, inventory_number, serial_number, mac_address, oper_system,
                                 year_of_purchase, month_of_warranty):
         try:
@@ -461,8 +497,6 @@ END
             print("An error occurred:", e)
             self.conn.rollback()
             return False
-
-
 
     def get_column_names(self, table_name):
         """
@@ -577,7 +611,8 @@ END
         except Exception as e:
             print(f"Error adding status: {str(e)}")
 
-    def update_basic_info(self, ip, name, network_name, type_of_device_id, place_of_installation_id, description, material_resp_person_id, branch_id,
+    def update_basic_info(self, ip, name, network_name, type_of_device_id, place_of_installation_id, description,
+                          material_resp_person_id, branch_id,
                           structural_unit_id, id_value):
         """
         Метод для обновления данных в таблице basic_info.
@@ -611,7 +646,8 @@ END
             self.conn.rollback()
             return False
 
-    def update_detail_info(self, inventory_number, serial_number, mac_address, oper_system, year_of_purchase, month_of_warranty, id_value):
+    def update_detail_info(self, inventory_number, serial_number, mac_address, oper_system, year_of_purchase,
+                           month_of_warranty, id_value):
         """
         Метод для обновления данных в таблице values_details.
 
@@ -641,7 +677,8 @@ END
             self.conn.rollback()
             return False
 
-    def update_component(self, processor, ram, motherboard, gpu, psu, networkCard, cooler, chasis, hdd, ssd, monitor, keyboard, mouse, audio, id_value):
+    def update_component(self, processor, ram, motherboard, gpu, psu, networkCard, cooler, chasis, hdd, ssd, monitor,
+                         keyboard, mouse, audio, id_value):
         """
         Метод для обновления данных в таблице component.
 
@@ -679,12 +716,3 @@ END
             print("An error occurred while updating data in component:", e)
             self.conn.rollback()
             return False
-
-
-
-
-
-
-
-
-
