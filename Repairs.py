@@ -181,11 +181,15 @@ class FirstFrame(customtkinter.CTkFrame):
 
         self.combobox4_device = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly", command=self.load_main_data)
         self.combobox4_device.grid(row=4, column=1, padx=10, pady=10, sticky="nsew")
-        CTkToolTip(self.combobox3_type_of_device, message="Выберите тип устройства.")
+        CTkToolTip(self.combobox4_device, message="Выберите устройствo.")
 
     def load_third_data(self, choice):
         type_of_device_id = db_manager.get_data("type_of_device", "id", f"name = '{choice}'")[0][0]
-        all_basic_info = db_manager.get_data("basic_info", "*", f"type_of_device_id = {type_of_device_id}")
+
+        branch_id = db_manager.get_data("branch_office", "id", f"name = '{self.combobox1_branch_office.get()}'")[0][0]
+        structural_unit_id = db_manager.get_data("structural_unit", "id", f"name = '{self.combobox2_structural_unit.get()}'")[0][0]
+
+        all_basic_info = db_manager.get_data("basic_info", "*", f"type_of_device_id = {type_of_device_id} AND branch_id = {branch_id} AND structural_unit_id = {structural_unit_id}")
 
         str_data_combobox4 = list()
         for data in all_basic_info:
@@ -203,6 +207,9 @@ class FirstFrame(customtkinter.CTkFrame):
             for data in all_repairs:
                 str_data_combobox1_repair.append(f"{data[0]} | {data[3]}")
             self.FillComboBox(self.secondFrameInstance.combobox1_repair, str_data_combobox1_repair)
+
+            if not all_repairs:
+                CTkMessagebox(title="Уведомление", message=f"Не добавлено ни одного ремонта.\n", icon="warning")
             # self.secondFrameInstance.combobox1_repair.get()
 
         except Exception as e:

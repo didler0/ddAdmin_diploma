@@ -28,7 +28,7 @@ class DescriptionViewer(customtkinter.CTkToplevel):
         """
         Создание окна добавления компьютера.
         """
-        self.title("Редактирование устройства")
+        self.title("Описание устройства")
         self.geometry("600x650")
         self.minsize(600, 650)
         self.maxsize(5000,650)
@@ -200,40 +200,30 @@ class DescriptionViewer(customtkinter.CTkToplevel):
                 entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(entry)
             elif text == "Место установки":
-                data = db_manager.get_data("place_of_installation", "name", "")
-                data = [str(row[0]) for row in data]
-                type_of_device = CTkAddDelCombobox.ComboBoxWithButtons(table="place_of_installation", master=self.tabview.tab("Базовая информация"), values=data)
-                type_of_device.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
-                self.widgetsBasic.append(type_of_device)
+                entry = customtkinter.CTkEntry(master=self.tabview.tab("Базовая информация"),
+                                               placeholder_text="Место установки")
+                entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
+                self.widgetsBasic.append(entry)
             elif text == "Сетевое имя":
                 entry = customtkinter.CTkEntry(master=self.tabview.tab("Базовая информация"), placeholder_text="Сетевое имя")
                 entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(entry)
-            elif text == "Тип устройства":
-                data = db_manager.get_data("type_of_device", "name", "")
-                data = [str(row[0]) for row in data]
-                type_of_device = CTkAddDelCombobox.ComboBoxWithButtons(table="type_of_device", master=self.tabview.tab("Базовая информация"), values=data)
-                type_of_device.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
-                self.widgetsBasic.append(type_of_device)
+
             elif text == "Материально ответственный":
-                data = db_manager.get_data("material_resp_person", "name", "")
-                data = [str(row[0]) for row in data]
-                structural_unit = CTkAddDelCombobox.ComboBoxWithButtons(table="material_resp_person", master=self.tabview.tab("Базовая информация"), values=data)
-                structural_unit.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
-                self.widgetsBasic.append(structural_unit)
+                entry = customtkinter.CTkEntry(master=self.tabview.tab("Базовая информация"),
+                                               placeholder_text="Матреиально ответственный")
+                entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
+                self.widgetsBasic.append(entry)
             elif text == "Филиал":
-                data = db_manager.get_data("branch_office", "name", "")
-                data = [str(row[0]) for row in data]
-                self.combobox1_branch_office = customtkinter.CTkComboBox(master=self.tabview.tab("Базовая информация"), values=data, state="readonly",
-                                                                         command=self.load_data)
-                self.combobox1_branch_office.grid(row=i, column=1, padx=10, pady=10, sticky="nsew")
-                self.widgetsBasic.append(self.combobox1_branch_office)
+                entry = customtkinter.CTkEntry(master=self.tabview.tab("Базовая информация"),
+                                               placeholder_text="Филиал")
+                entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
+                self.widgetsBasic.append(entry)
             elif text == "Структурное подразделение":
-                data = db_manager.get_data("structural_unit", "name", "")
-                data = [str(row[0]) for row in data]
-                self.combobox2_structural_unit = customtkinter.CTkComboBox(master=self.tabview.tab("Базовая информация"), values=[" "], state="readonly")
-                self.combobox2_structural_unit.grid(row=i, column=1, padx=10, pady=10, sticky="nsew")
-                self.widgetsBasic.append(self.combobox2_structural_unit)
+                entry = customtkinter.CTkEntry(master=self.tabview.tab("Базовая информация"),
+                                               placeholder_text="Структурное подразделение")
+                entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
+                self.widgetsBasic.append(entry)
             else:
                 textBox = customtkinter.CTkTextbox(master=self.tabview.tab("Базовая информация"), height=90)
                 textBox.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
