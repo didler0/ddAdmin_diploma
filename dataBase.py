@@ -203,21 +203,27 @@ class DatabaseManager:
         """
         try:
             procedure_query = """
-                            CREATE PROCEDURE GetBasicInfoStatusBetweenDates
-                @date_start DATE,
-                @date_end DATE
-            AS
-            BEGIN
-                SELECT S.basic_info_id,
-                       S.status_,
-                       S.status_date,
-                       B.name AS basic_info_name,
-                       P.name AS place_of_installation_name
-                FROM status S
-                JOIN basic_info B ON B.id = S.basic_info_id
-                JOIN place_of_installation P ON P.id = B.place_of_installation_id
-                WHERE S.status_date BETWEEN @date_start AND @date_end;
-            END
+                            CREATE PROCEDURE GetBasicInfoStatusBetweenDatesInBranchAndStructUnit
+                    @date_start DATE,
+                    @date_end DATE,
+                    @branch NVARCHAR(100),
+                    @st_unit NVARCHAR(100)
+                AS
+                BEGIN
+                    SELECT B.name AS basic_info_name,
+                           B.network_name,
+                           S.status_,
+                           S.status_date,
+                           P.name AS place_of_installation_name
+                    FROM status S
+                    JOIN basic_info B ON B.id = S.basic_info_id
+                    JOIN place_of_installation P ON P.id = B.place_of_installation_id
+                    JOIN branch_office BO ON BO.id = B.branch_id
+                    JOIN structural_unit SU ON SU.id = B.structural_unit_id
+                    WHERE S.status_date BETWEEN @date_start AND @date_end
+                    AND BO.name = @branch
+                    AND SU.name = @st_unit;
+                END
             """
             self.cur.execute(procedure_query)
             self.conn.commit()
