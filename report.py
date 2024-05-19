@@ -58,7 +58,7 @@ class Reports(customtkinter.CTkToplevel):
 
         # Отчет на выбранное устройство
         self.fourth = ThirdFrameReport(self.frame, self.first, self.second)
-        self.fourth.grid(row=1, column=2, padx=10, pady=10, sticky="")
+        self.fourth.grid(row=1, column=2, padx=10, pady=10, sticky="ns")
         # Отчет по месту установки
 
         # отчет по всем устройствам филиала
@@ -356,6 +356,7 @@ class ThirdFrameReport(customtkinter.CTkFrame):
         super().__init__(master)
         self.first_frame_choise = first_frame_ch_instance
         self.second_frame_instance = second_instance
+        self.grid_rowconfigure((1,2,3,4),weight=1)
         self.configure(border_color="dodgerblue", border_width=3)
         customtkinter.CTkLabel(master=self, text="Отчет по выбранному устройству", fg_color="gray30",
                                font=("Arial", 14)).grid(row=0, columnspan=3, column=0, padx=10, pady=10, sticky="ew")
@@ -425,10 +426,7 @@ class ThirdFrameReport(customtkinter.CTkFrame):
         structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
         type_of_device = self.type_of_device_combob.get()
         device = self.device_combob.get()
-        parts = device.split('|')
-        # Удаление лишних пробелов с каждой части
-        ip_address = parts[0].strip()
-        network_name = parts[1].strip()
+
 
         # Check if either combobox is empty
         if not branch_office.strip():
@@ -443,55 +441,62 @@ class ThirdFrameReport(customtkinter.CTkFrame):
         if not device.strip():
             CTkMessagebox(title="Ошибка", message="Выберите устройствo!", icon="warning")
             return
-        root = tk.Tk()
-        root.withdraw()  # Скрытие корневого окна
-        file_path = filedialog.asksaveasfilename(defaultextension=".docx",
-                                                 filetypes=[("Word Document", "*.docx")],
-                                                 title="Выберите место сохранения документа",
-                                                 initialfile="ОтчетПоРемонтам")
+        parts = device.split('|')
+        # Удаление лишних пробелов с каждой части
+        ip_address = parts[0].strip()
+        network_name = parts[1].strip()
+        try:
+            root = tk.Tk()
+            root.withdraw()  # Скрытие корневого окна
+            file_path = filedialog.asksaveasfilename(defaultextension=".docx",
+                                                     filetypes=[("Word Document", "*.docx")],
+                                                     title="Выберите место сохранения документа",
+                                                     initialfile=f"ОтчетПоУстройству_{network_name}")
 
-        if not file_path:
-            return  # Прерывание функции, если пользователь не выбрал место сохранения
+            if not file_path:
+                return  # Прерывание функции, если пользователь не выбрал место сохранения
 
-        data = db_manager.exec_procedure("GetDeviceInfoByBranchStrUnitTypeOfDeviceIpNetworkName",
-                                         branch_office,structural_unit,type_of_device,ip_address,network_name)
-        print(data)
-        doc = DocxTemplate("resources\\pattern_for_third_report.docx")
-        context = {
-            'branch_office': data[0][0],
-            'structural_unit': data[0][1],
-            'inv_numb': data[0][2],
-            'name': data[0][3],
-            'network_name': data[0][4],
-            'type_of_device': data[0][5],
-            'location': data[0][6],
-            'description_basic': data[0][7],
-            'material_resp_person': data[0][8],
-            'last_status': 'Вкл' if data[0][9] else 'Выкл',
-            'last_repair': data[0][10] if data[0][10] is not None else '',
-            'serial_numb': data[0][11],
-            'mac_adr': data[0][12],
-            'os': data[0][13],
-            'year_of_pushare': data[0][14],
-            'month_of_garanty': data[0][15],
-            'processor': data[0][16],
-            'ram': data[0][17],
-            'motherboard': data[0][18],
-            'graphicCard': data[0][19],
-            'psu': data[0][20],
-            'networkCard': data[0][21],
-            'cooler': data[0][22],
-            'chasis': data[0][23],
-            'hdd': data[0][24],
-            'ssd': data[0][25],
-            'monitor': data[0][26],
-            'keyboard': data[0][27],
-            'mouse': data[0][28],
-            'audio': data[0][29]
-        }
-
-        doc.render(context)
-        doc.save(file_path)
+            data = db_manager.exec_procedure("GetDeviceInfoByBranchStrUnitTypeOfDeviceIpNetworkName",
+                                             branch_office,structural_unit,type_of_device,ip_address,network_name)
+            print(data)
+            doc = DocxTemplate("resources\\pattern_for_third_report.docx")
+            context = {
+                'branch_office': data[0][0],
+                'structural_unit': data[0][1],
+                'inv_numb': data[0][2],
+                'name': data[0][3],
+                'network_name': data[0][4],
+                'type_of_device': data[0][5],
+                'location': data[0][6],
+                'description_basic': data[0][7],
+                'material_resp_person': data[0][8],
+                'last_status': 'Вкл' if data[0][9] else 'Выкл',
+                'last_repair': data[0][10] if data[0][10] is not None else '',
+                'serial_numb': data[0][11],
+                'mac_adr': data[0][12],
+                'os': data[0][13],
+                'year_of_pushare': data[0][14],
+                'month_of_garanty': data[0][15],
+                'processor': data[0][16],
+                'ram': data[0][17],
+                'motherboard': data[0][18],
+                'graphicCard': data[0][19],
+                'psu': data[0][20],
+                'networkCard': data[0][21],
+                'cooler': data[0][22],
+                'chasis': data[0][23],
+                'hdd': data[0][24],
+                'ssd': data[0][25],
+                'monitor': data[0][26],
+                'keyboard': data[0][27],
+                'mouse': data[0][28],
+                'audio': data[0][29]
+            }
+            doc.render(context)
+            doc.save(file_path)
+            CTkMessagebox(title="Успех", message="Отчет успешно сформирован.", icon="check")
+        except Exception as e:
+            CTkMessagebox(title="Ошибка", message="Ошибка при формировании отчета!", icon="warning")
 
 
 
