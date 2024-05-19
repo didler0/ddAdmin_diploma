@@ -153,6 +153,7 @@ class DatabaseManager:
             self.create_stored_procedure_get_structural_units()
             self.create_stored_procedure_get_info_by_branch_and_structural_unit()
             self.create_stored_procedure_GetBasicInfoStatusBetweenDates()
+            self.create_stored_procedure_GetRepairsBetweenTwoDates()
             self.create_trigger()
             self.create_trigger_last_repair()
         except pyodbc.Error as e:
@@ -232,7 +233,47 @@ class DatabaseManager:
             print("An error occurred while creating stored procedure:", e)
             self.conn.rollback()
             return False
+    def create_stored_procedure_GetRepairsBetweenTwoDates(self):
+        """
+        Метод для создания хранимой процедуры GetRepairsBetweenTwoDates.
 
+        Returns:
+            bool: True, если процедура была успешно создана, в противном случае - False.
+        """
+        try:
+            procedure_query = """
+                            CREATE PROCEDURE GetRepairsBetweenTwoDates
+                    @date_start DATE,
+                    @date_end DATE,
+                    @branch NVARCHAR(100),
+                    @st_unit NVARCHAR(100)
+                AS
+                BEGIN
+                    SET NOCOUNT ON;
+                
+                    SELECT 
+                        b.network_name,
+                        b.ip,
+                        r.description,
+                        r.repair_date,
+                        r.document_path
+                    FROM repair r
+                    JOIN basic_info b ON b.id = r.basic_info_id
+                    JOIN branch_office BO ON BO.id = b.branch_id
+                    JOIN structural_unit SU ON SU.id = b.structural_unit_id
+                    WHERE r.repair_date BETWEEN @date_start AND @date_end
+                    AND BO.name = @branch
+                    AND SU.name = @st_unit;
+                END
+
+            """
+            self.cur.execute(procedure_query)
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred while creating stored procedure:", e)
+            self.conn.rollback()
+            return False
     def create_stored_procedure_get_info_by_branch_and_structural_unit(self):
         """
                 Метод для создания хранимой процедуры GetInfoByBranchAndStructuralUnit.
