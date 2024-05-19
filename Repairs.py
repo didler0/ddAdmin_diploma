@@ -14,7 +14,8 @@ with open('database_info.txt', 'r') as file:
     db_info = file.read().strip()
 db_info_parts = db_info.split(', ')
 db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
-
+#тут нужно отделить редактирование и удаление от добавления
+# вынести все к хуям
 
 class Repair(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
