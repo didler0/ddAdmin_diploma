@@ -1,7 +1,7 @@
 import customtkinter
 import tkinter
 import re
-
+from docxtpl import DocxTemplate
 from CTkMessagebox import CTkMessagebox
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from hPyT import *
@@ -36,28 +36,33 @@ class Reports(customtkinter.CTkToplevel):
 
     def create_widgets(self):
         self.title("Формирование отчетов")
-        self.geometry("850x650")
-        self.minsize(850, 650)
-        self.frame = customtkinter.CTkFrame(self, height=490)
+        self.geometry("1100x650")
+        self.minsize(1100, 650)
+        self.frame = customtkinter.CTkScrollableFrame(self, height=490, orientation="horizontal")
+
         self.frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
-        self.frame.grid_columnconfigure((0,1), weight=1)
+        self.frame.grid_columnconfigure((0, 1), weight=1)
 
         self.first = FirstFrameChoise(self.frame)
-        self.first.grid(row=0, column=0, padx=10, pady=10, sticky="",columnspan=2)
+        self.first.grid(row=0, column=0, padx=10, pady=10, sticky="", columnspan=3)
 
         # Отчет по статусам работы  - готово
         self.second = FirstFrameReport(self.frame, self.first)
         self.second.grid(row=1, column=0, padx=10, pady=10, sticky="")
 
         # Отчет по ремонтам за промежуток дат
-        self.third = SecondFrameReport(self.frame, self.first,self.second)
+        self.third = SecondFrameReport(self.frame, self.first, self.second)
         self.third.grid(row=1, column=1, padx=10, pady=10, sticky="")
 
         # Отчет на выбранное устройство
+        self.fourth = ThirdFrameReport(self.frame, self.first, self.second)
+        self.fourth.grid(row=1, column=2, padx=10, pady=10, sticky="")
         # Отчет по месту установки
+
         # отчет по всем устройствам филиала
+
         # отчет по всем устройствам по структурного подразделения
 
 
@@ -92,10 +97,6 @@ class FirstFrameChoise(customtkinter.CTkFrame):
         data__ = [str(data) for data in data_]
         combobox.configure(values=data__)
         self.update()
-
-
-
-
 
 
 class FirstFrameReport(customtkinter.CTkFrame):
@@ -169,9 +170,9 @@ class FirstFrameReport(customtkinter.CTkFrame):
         date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
         date_end = datetime.strptime(date_end_str, "%Y-%m-%d")
         data = db_manager.exec_procedure("GetBasicInfoStatusBetweenDatesInBranchAndStructUnit",
-                                                    date_start, date_end,
-                                                    f"{self.first_frame_choise.combobox1_branch_office.get()}",
-                                                    f"{self.first_frame_choise.combobox2_structural_unit.get()}")
+                                         date_start, date_end,
+                                         f"{self.first_frame_choise.combobox1_branch_office.get()}",
+                                         f"{self.first_frame_choise.combobox2_structural_unit.get()}")
         # Создание диалогового окна выбора места сохранения документа
         root = tk.Tk()
         root.withdraw()  # Скрытие корневого окна
@@ -225,8 +226,9 @@ class FirstFrameReport(customtkinter.CTkFrame):
         # Сохранение документа
         doc.save(file_path)
 
+
 class SecondFrameReport(customtkinter.CTkFrame):
-    def __init__(self, master, first_frame_ch_instance,second_instance):
+    def __init__(self, master, first_frame_ch_instance, second_instance):
         super().__init__(master)
         self.first_frame_choise = first_frame_ch_instance
         self.second_frame_instance = second_instance
@@ -295,17 +297,17 @@ class SecondFrameReport(customtkinter.CTkFrame):
         date_end = datetime.strptime(date_end_str, "%Y-%m-%d")
         # Отчет по ремонтам за промежуток дат
 
-        data = db_manager.exec_procedure("GetRepairsBetweenTwoDates",date_start, date_end,
-                                                    f"{self.first_frame_choise.combobox1_branch_office.get()}",
-                                                    f"{self.first_frame_choise.combobox2_structural_unit.get()}")
+        data = db_manager.exec_procedure("GetRepairsBetweenTwoDates", date_start, date_end,
+                                         f"{self.first_frame_choise.combobox1_branch_office.get()}",
+                                         f"{self.first_frame_choise.combobox2_structural_unit.get()}")
         print(data)
-        #[('WS-FI01-101', '192.168.100.1', 'jhmgh', '2024-05-21', 'repairs\\ФИ-01\\Отдел первый\\Роутер\\2024-05-21_WS-FI01-101')]
-        #сетевое имя
-        #IP
-        #Описание
-        #Дата ремонта
-        #Папка с документами
-        #5 столбцов
+        # [('WS-FI01-101', '192.168.100.1', 'jhmgh', '2024-05-21', 'repairs\\ФИ-01\\Отдел первый\\Роутер\\2024-05-21_WS-FI01-101')]
+        # сетевое имя
+        # IP
+        # Описание
+        # Дата ремонта
+        # Папка с документами
+        # 5 столбцов
 
         root = tk.Tk()
         root.withdraw()  # Скрытие корневого окна
@@ -347,6 +349,150 @@ class SecondFrameReport(customtkinter.CTkFrame):
 
         # Сохранение документа
         doc.save(file_path)
+
+
+class ThirdFrameReport(customtkinter.CTkFrame):
+    def __init__(self, master, first_frame_ch_instance, second_instance):
+        super().__init__(master)
+        self.first_frame_choise = first_frame_ch_instance
+        self.second_frame_instance = second_instance
+        self.configure(border_color="dodgerblue", border_width=3)
+        customtkinter.CTkLabel(master=self, text="Отчет по выбранному устройству", fg_color="gray30",
+                               font=("Arial", 14)).grid(row=0, columnspan=3, column=0, padx=10, pady=10, sticky="ew")
+        customtkinter.CTkButton(master=self, text="Загрузить устройства",
+                                command=lambda: self.load_devices_types()).grid(
+            row=1, column=0, padx=10, pady=10, sticky="ew", columnspan=3)
+
+        customtkinter.CTkLabel(master=self, text="Выберите тип устройства").grid(
+            row=2, column=0, padx=10, pady=10)
+
+        self.type_of_device_combob = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly",
+                                                               command=self.load_devices)
+        self.type_of_device_combob.grid(row=2, column=1, padx=10, pady=10)
+
+        customtkinter.CTkLabel(master=self, text="Выберите устройство").grid(
+            row=3, column=0, padx=10, pady=10)
+        self.device_combob = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly")
+        self.device_combob.grid(row=3, column=1, padx=10, pady=10)
+
+        customtkinter.CTkButton(master=self, text="Сформировать отчёт",
+                                command=lambda: self.make_report()).grid(
+            row=4, column=0, padx=10, pady=10, sticky="ew", columnspan=3)
+
+    def load_devices_types(self):
+        branch_office = self.first_frame_choise.combobox1_branch_office.get()
+        structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
+        # Check if either combobox is empty
+        if not branch_office.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите филиал!", icon="warning")
+            return
+        if not structural_unit.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите структурное подразделение!", icon="warning")
+            return
+        try:
+            id_branch = db_manager.get_data("branch_office", "id", f"name = '{branch_office}'")[0][0]
+            id_unit = db_manager.get_data("structural_unit", "id", f"name = '{structural_unit}'")[0][0]
+            data = db_manager.exec_procedure("GetUniqueDeviceNames", id_branch, id_unit)
+            data = [str(row[0]) for row in data]
+            self.type_of_device_combob.configure(values=data)
+            self.update()
+            CTkMessagebox(title="Успех", message="Типы устройств успешно загуржены", icon="check")
+        except Exception as e:
+            CTkMessagebox(title="Ошибка", message=f"Ошибка на этапе загрузки типов устройств!\n {e}", icon="warning")
+    def load_devices(self, choice):
+        print(choice)
+        branch_office = self.first_frame_choise.combobox1_branch_office.get()
+        structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
+        # Check if either combobox is empty
+        if not branch_office.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите филиал!", icon="warning")
+            return
+        if not structural_unit.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите структурное подразделение!", icon="warning")
+            return
+        id_branch = db_manager.get_data("branch_office", "id", f"name = '{branch_office}'")[0][0]
+        id_unit = db_manager.get_data("structural_unit", "id", f"name = '{structural_unit}'")[0][0]
+        id_type_of_device = db_manager.get_data("type_of_device", "id", f"name = '{choice}'")[0][0]
+
+        data = db_manager.exec_procedure("GetDeviceDetails", id_branch, id_unit, id_type_of_device)
+        data = [str(row[0] + " | " + row[1]) for row in data]
+        self.device_combob.configure(values=data)
+        self.update()
+
+
+    def make_report(self):
+        branch_office = self.first_frame_choise.combobox1_branch_office.get()
+        structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
+        type_of_device = self.type_of_device_combob.get()
+        device = self.device_combob.get()
+        parts = device.split('|')
+        # Удаление лишних пробелов с каждой части
+        ip_address = parts[0].strip()
+        network_name = parts[1].strip()
+
+        # Check if either combobox is empty
+        if not branch_office.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите филиал!", icon="warning")
+            return
+        if not structural_unit.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите структурное подразделение!", icon="warning")
+            return
+        if not type_of_device.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите тип устройства!", icon="warning")
+            return
+        if not device.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите устройствo!", icon="warning")
+            return
+        root = tk.Tk()
+        root.withdraw()  # Скрытие корневого окна
+        file_path = filedialog.asksaveasfilename(defaultextension=".docx",
+                                                 filetypes=[("Word Document", "*.docx")],
+                                                 title="Выберите место сохранения документа",
+                                                 initialfile="ОтчетПоРемонтам")
+
+        if not file_path:
+            return  # Прерывание функции, если пользователь не выбрал место сохранения
+
+        data = db_manager.exec_procedure("GetDeviceInfoByBranchStrUnitTypeOfDeviceIpNetworkName",
+                                         branch_office,structural_unit,type_of_device,ip_address,network_name)
+        print(data)
+        doc = DocxTemplate("resources\\pattern_for_third_report.docx")
+        context = {
+            'branch_office': data[0][0],
+            'structural_unit': data[0][1],
+            'inv_numb': data[0][2],
+            'name': data[0][3],
+            'network_name': data[0][4],
+            'type_of_device': data[0][5],
+            'location': data[0][6],
+            'description_basic': data[0][7],
+            'material_resp_person': data[0][8],
+            'last_status': 'Вкл' if data[0][9] else 'Выкл',
+            'last_repair': data[0][10] if data[0][10] is not None else '',
+            'serial_numb': data[0][11],
+            'mac_adr': data[0][12],
+            'os': data[0][13],
+            'year_of_pushare': data[0][14],
+            'month_of_garanty': data[0][15],
+            'processor': data[0][16],
+            'ram': data[0][17],
+            'motherboard': data[0][18],
+            'graphicCard': data[0][19],
+            'psu': data[0][20],
+            'networkCard': data[0][21],
+            'cooler': data[0][22],
+            'chasis': data[0][23],
+            'hdd': data[0][24],
+            'ssd': data[0][25],
+            'monitor': data[0][26],
+            'keyboard': data[0][27],
+            'mouse': data[0][28],
+            'audio': data[0][29]
+        }
+
+        doc.render(context)
+        doc.save(file_path)
+
 
 
 

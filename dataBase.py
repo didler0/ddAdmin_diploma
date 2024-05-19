@@ -154,6 +154,9 @@ class DatabaseManager:
             self.create_stored_procedure_get_info_by_branch_and_structural_unit()
             self.create_stored_procedure_GetBasicInfoStatusBetweenDates()
             self.create_stored_procedure_GetRepairsBetweenTwoDates()
+            self.create_stored_procedure_GetUniqueDeviceNames()
+            self.create_stored_procedure_GetDeviceDetails()
+            self.create_stored_procedure_GetDeviceInfoByBranchStrUnitTypeOfDeviceIpNetworkName()
             self.create_trigger()
             self.create_trigger_last_repair()
         except pyodbc.Error as e:
@@ -161,6 +164,114 @@ class DatabaseManager:
             self.conn.rollback()
             raise
 
+    def create_stored_procedure_GetDeviceInfoByBranchStrUnitTypeOfDeviceIpNetworkName(self):
+        """
+        Метод для создания хранимой процедуры GetDeviceInfoByBranchStrUnitTypeOfDeviceIpNetworkName.
+
+        Returns:
+            bool: True, если процедура была успешно создана, в противном случае - False.
+        """
+        try:
+            procedure_query = """
+            CREATE PROCEDURE GetDeviceInfoByBranchStrUnitTypeOfDeviceIpNetworkName
+                @branch NVARCHAR(255),
+                @unit NVARCHAR(255),
+                @type_of_device NVARCHAR(255),
+                @ip NVARCHAR(255),
+                @network_name NVARCHAR(255)
+            AS
+            BEGIN
+                SELECT
+                    BO.name,
+                    SU.name,
+                    DI.inventory_number,
+                    b.name,
+                    b.network_name,
+                    TD.name,
+                    POI.name,
+                    b.description,
+                    MRP.name,
+                    b.last_status,
+                    b.last_repair,
+                    DI.serial_number,
+                    DI.mac_address,
+                    DI.oper_system,
+                    DI.year_of_purchase,
+                    DI.month_of_warranty,
+                    COMP.processor,
+                    COMP.ram,
+                    COMP.motherboard,
+                    COMP.gpu,
+                    COMP.psu,
+                    COMP.networkCard,
+                    COMP.cooler,
+                    COMP.chasis,
+                    COMP.hdd,
+                    COMP.ssd,
+                    COMP.monitor,
+                    COMP.keyboard,
+                    COMP.mouse,
+                    COMP.audio
+                FROM basic_info b
+                JOIN branch_office BO ON BO.id = b.branch_id
+                JOIN structural_unit SU ON SU.id = b.structural_unit_id
+                JOIN type_of_device TD ON TD.id = b.type_of_device_id
+                JOIN detail_info DI on DI.id = b.detail_info_id
+                JOIN place_of_installation POI on POI.id = b.place_of_installation_id
+                JOIN material_resp_person MRP on MRP.id = b.material_resp_person_id
+                JOIN component COMP ON COMP.id = DI.component_id
+                WHERE BO.name = @branch 
+                  AND SU.name = @unit 
+                  AND TD.name = @type_of_device
+                  AND b.ip = @ip 
+                  AND b.network_name = @network_name;
+            END
+            """
+            self.cur.execute(procedure_query)
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred while creating stored procedure:", e)
+            self.conn.rollback()
+            return False
+    def create_stored_procedure_GetDeviceDetails(self):
+        """
+        Метод для создания хранимой процедуры GetDeviceDetails.
+
+        Returns:
+            bool: True, если процедура была успешно создана, в противном случае - False.
+        """
+        try:
+            procedure_query = """
+                            CREATE PROCEDURE GetDeviceDetails 
+                @branch_id INT,
+                @structural_unit_id INT,
+                @device_type_id INT
+            AS
+            BEGIN
+                SET NOCOUNT ON;
+            
+                SELECT
+                    b.ip,
+                    b.network_name
+                FROM
+                    basic_info b
+                    JOIN branch_office BO ON BO.id = b.branch_id
+                    JOIN structural_unit SU ON SU.id = b.structural_unit_id
+                    JOIN type_of_device TD ON TD.id = b.type_of_device_id
+                WHERE
+                    BO.id = @branch_id 
+                    AND SU.id = @structural_unit_id
+                    AND TD.id = @device_type_id;
+            END
+            """
+            self.cur.execute(procedure_query)
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred while creating stored procedure:", e)
+            self.conn.rollback()
+            return False
     def create_stored_procedure_get_structural_units(self):
         """
         Метод для создания хранимой процедуры GetStructuralUnits.
@@ -194,7 +305,40 @@ class DatabaseManager:
             print("An error occurred while creating stored procedure:", e)
             self.conn.rollback()
             return False
+    def create_stored_procedure_GetUniqueDeviceNames(self):
+        """
+        Метод для создания хранимой процедуры GetUniqueDeviceNames.
 
+        Returns:
+            bool: True, если процедура была успешно создана, в противном случае - False.
+        """
+        try:
+            procedure_query = """
+                CREATE PROCEDURE GetUniqueDeviceNames 
+                @branch_id INT,
+                @structural_unit_id INT
+            AS
+            BEGIN
+                SET NOCOUNT ON;
+            
+                SELECT DISTINCT
+                    TD.name
+                FROM
+                    basic_info b
+                    JOIN branch_office BO ON BO.id = b.branch_id
+                    JOIN structural_unit SU ON SU.id = b.structural_unit_id
+                    JOIN type_of_device TD ON TD.id = b.type_of_device_id
+                WHERE
+                    BO.id = @branch_id AND SU.id = @structural_unit_id;
+            END
+            """
+            self.cur.execute(procedure_query)
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred while creating stored procedure:", e)
+            self.conn.rollback()
+            return False
     def create_stored_procedure_GetBasicInfoStatusBetweenDates(self):
         """
         Метод для создания хранимой процедуры GetBasicInfoStatusBetweenDates.
