@@ -94,128 +94,6 @@ class FirstFrameChoise(customtkinter.CTkFrame):
         self.update()
 
 
-class SecondFrameReport(customtkinter.CTkFrame):
-    def __init__(self, master, first_frame_ch_instance,second_instance):
-        super().__init__(master)
-        self.first_frame_choise = first_frame_ch_instance
-        self.second_frame_instance = second_instance
-        self.configure(border_color="dodgerblue", border_width=3)
-        customtkinter.CTkLabel(master=self, text="Отчет по ремонтам", fg_color="gray30",
-                               font=("Arial", 14)).grid(row=0, columnspan=3, column=0, padx=10, pady=10, sticky="ew")
-        self.date_Start = CTkSelectDate.SelectDate(self, label_text="Выберите дату начала периода")
-        self.date_Start.grid(row=1, columnspan=2, column=0, padx=10, pady=10, sticky="ew")
-
-        self.date_End = CTkSelectDate.SelectDate(self, label_text="Выберите дату конца периода")
-        self.date_End.grid(row=2, columnspan=2, column=0, padx=10, pady=10, sticky="ew")
-
-        customtkinter.CTkLabel(master=self, text="Дата конца не включает последний день!").grid(row=3, columnspan=2,
-                                                                                                column=0, padx=2,
-                                                                                                pady=2, sticky="ew")
-
-        self.MakeReport1Button = customtkinter.CTkButton(master=self, text="Сформировать и открыть отчет",
-                                                         command=lambda: self.make_report())
-        self.MakeReport1Button.grid(row=4, column=0, columnspan=2, pady=10, padx=10, sticky="ew")
-
-    def make_report(self):
-        branch_office = self.first_frame_choise.combobox1_branch_office.get()
-        structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
-
-        # Check if either combobox is empty
-        if not branch_office.strip():
-            CTkMessagebox(title="Ошибка", message="Выберите филиал!", icon="warning")
-            return
-        if not structural_unit.strip():
-            CTkMessagebox(title="Ошибка", message="Выберите структурное подразделение!", icon="warning")
-            return
-
-        date_start_str = self.date_Start.get_current_date()
-        date_end_str = self.date_End.get_current_date()
-
-        # Check if either date is empty
-        if not date_start_str.strip():
-            CTkMessagebox(title="Ошибка", message="Выберите дату начала периода!", icon="warning")
-            return
-        if not date_end_str.strip():
-            CTkMessagebox(title="Ошибка", message="Выберите дату конца периода!", icon="warning")
-            return
-
-        try:
-            date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
-            date_end = datetime.strptime(date_end_str, "%Y-%m-%d")
-        except ValueError as e:
-            CTkMessagebox(title="Ошибка", message="Неверный формат даты!", icon="warning")
-            return
-
-        if self.second_frame_instance.compare_dates(date_start_str, date_end_str):
-            diff = date_end - date_start
-            if diff.days >= 0:
-                print(branch_office)
-                print(structural_unit)
-                self.make_document()
-            else:
-                CTkMessagebox(title="Ошибка", message="Дата начала позже даты окончания.", icon="warning")
-        else:
-            CTkMessagebox(title="Ошибка", message="Дата начала позже даты окончания.", icon="warning")
-
-    def make_document(self):
-        date_start_str = self.date_Start.get_current_date()
-        date_end_str = self.date_End.get_current_date()
-        date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
-        date_end = datetime.strptime(date_end_str, "%Y-%m-%d")
-        # Отчет по ремонтам за промежуток дат
-
-        data = db_manager.exec_procedure("GetRepairsBetweenTwoDates",date_start, date_end,
-                                                    f"{self.first_frame_choise.combobox1_branch_office.get()}",
-                                                    f"{self.first_frame_choise.combobox2_structural_unit.get()}")
-        print(data)
-        #[('WS-FI01-101', '192.168.100.1', 'jhmgh', '2024-05-21', 'repairs\\ФИ-01\\Отдел первый\\Роутер\\2024-05-21_WS-FI01-101')]
-        #сетевое имя
-        #IP
-        #Описание
-        #Дата ремонта
-        #Папка с документами
-        #5 столбцов
-
-        root = tk.Tk()
-        root.withdraw()  # Скрытие корневого окна
-        file_path = filedialog.asksaveasfilename(defaultextension=".docx",
-                                                 filetypes=[("Word Document", "*.docx")],
-                                                 title="Выберите место сохранения документа",
-                                                 initialfile="ОтчетПоРемонтам")
-
-        if not file_path:
-            return  # Прерывание функции, если пользователь не выбрал место сохранения
-
-        doc = Document()
-        title = doc.add_heading(
-            f'Отчет по ремонтам устройств.\n Филиал - {self.first_frame_choise.combobox1_branch_office.get()} \n '
-            f'Структурное подразделение - {self.first_frame_choise.combobox2_structural_unit.get()}', level=1)
-        title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-
-        # Добавление таблицы с данными
-        table = doc.add_table(rows=1, cols=5)
-        table.style = 'Table Grid'
-        # название, сетевое название, статус, дата,место установки
-        # "('Рабочая станция', 'WS-FI05-120', 0, datetime.datetime(2024, 5, 8, 9, 21, 17, 350000), '2')"
-
-        # Заголовки столбцов
-        hdr_cells = table.rows[0].cells
-        hdr_cells[0].text = 'Сетевое имя'
-        hdr_cells[1].text = 'IP'
-        hdr_cells[2].text = 'Описание'
-        hdr_cells[3].text = 'Дата ремонта'
-        hdr_cells[4].text = 'Папка с документами'
-
-        for item in data:
-            row_cells = table.add_row().cells
-            row_cells[0].text = str(item[0])  # Название
-            row_cells[1].text = str(item[1])  # Сетевое имя
-            row_cells[2].text = str(item[2])
-            row_cells[3].text = str(item[3])  # Место установки
-            row_cells[4].text = str(item[4])
-
-        # Сохранение документа
-        doc.save(file_path)
 
 
 
@@ -347,6 +225,128 @@ class FirstFrameReport(customtkinter.CTkFrame):
         # Сохранение документа
         doc.save(file_path)
 
+class SecondFrameReport(customtkinter.CTkFrame):
+    def __init__(self, master, first_frame_ch_instance,second_instance):
+        super().__init__(master)
+        self.first_frame_choise = first_frame_ch_instance
+        self.second_frame_instance = second_instance
+        self.configure(border_color="dodgerblue", border_width=3)
+        customtkinter.CTkLabel(master=self, text="Отчет по ремонтам", fg_color="gray30",
+                               font=("Arial", 14)).grid(row=0, columnspan=3, column=0, padx=10, pady=10, sticky="ew")
+        self.date_Start = CTkSelectDate.SelectDate(self, label_text="Выберите дату начала периода")
+        self.date_Start.grid(row=1, columnspan=2, column=0, padx=10, pady=10, sticky="ew")
+
+        self.date_End = CTkSelectDate.SelectDate(self, label_text="Выберите дату конца периода")
+        self.date_End.grid(row=2, columnspan=2, column=0, padx=10, pady=10, sticky="ew")
+
+        customtkinter.CTkLabel(master=self, text="Дата конца не включает последний день!").grid(row=3, columnspan=2,
+                                                                                                column=0, padx=2,
+                                                                                                pady=2, sticky="ew")
+
+        self.MakeReport1Button = customtkinter.CTkButton(master=self, text="Сформировать и открыть отчет",
+                                                         command=lambda: self.make_report())
+        self.MakeReport1Button.grid(row=4, column=0, columnspan=2, pady=10, padx=10, sticky="ew")
+
+    def make_report(self):
+        branch_office = self.first_frame_choise.combobox1_branch_office.get()
+        structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
+
+        # Check if either combobox is empty
+        if not branch_office.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите филиал!", icon="warning")
+            return
+        if not structural_unit.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите структурное подразделение!", icon="warning")
+            return
+
+        date_start_str = self.date_Start.get_current_date()
+        date_end_str = self.date_End.get_current_date()
+
+        # Check if either date is empty
+        if not date_start_str.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите дату начала периода!", icon="warning")
+            return
+        if not date_end_str.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите дату конца периода!", icon="warning")
+            return
+
+        try:
+            date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
+            date_end = datetime.strptime(date_end_str, "%Y-%m-%d")
+        except ValueError as e:
+            CTkMessagebox(title="Ошибка", message="Неверный формат даты!", icon="warning")
+            return
+
+        if self.second_frame_instance.compare_dates(date_start_str, date_end_str):
+            diff = date_end - date_start
+            if diff.days >= 0:
+                print(branch_office)
+                print(structural_unit)
+                self.make_document()
+            else:
+                CTkMessagebox(title="Ошибка", message="Дата начала позже даты окончания.", icon="warning")
+        else:
+            CTkMessagebox(title="Ошибка", message="Дата начала позже даты окончания.", icon="warning")
+
+    def make_document(self):
+        date_start_str = self.date_Start.get_current_date()
+        date_end_str = self.date_End.get_current_date()
+        date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
+        date_end = datetime.strptime(date_end_str, "%Y-%m-%d")
+        # Отчет по ремонтам за промежуток дат
+
+        data = db_manager.exec_procedure("GetRepairsBetweenTwoDates",date_start, date_end,
+                                                    f"{self.first_frame_choise.combobox1_branch_office.get()}",
+                                                    f"{self.first_frame_choise.combobox2_structural_unit.get()}")
+        print(data)
+        #[('WS-FI01-101', '192.168.100.1', 'jhmgh', '2024-05-21', 'repairs\\ФИ-01\\Отдел первый\\Роутер\\2024-05-21_WS-FI01-101')]
+        #сетевое имя
+        #IP
+        #Описание
+        #Дата ремонта
+        #Папка с документами
+        #5 столбцов
+
+        root = tk.Tk()
+        root.withdraw()  # Скрытие корневого окна
+        file_path = filedialog.asksaveasfilename(defaultextension=".docx",
+                                                 filetypes=[("Word Document", "*.docx")],
+                                                 title="Выберите место сохранения документа",
+                                                 initialfile="ОтчетПоРемонтам")
+
+        if not file_path:
+            return  # Прерывание функции, если пользователь не выбрал место сохранения
+
+        doc = Document()
+        title = doc.add_heading(
+            f'Отчет по ремонтам устройств.\n Филиал - {self.first_frame_choise.combobox1_branch_office.get()} \n '
+            f'Структурное подразделение - {self.first_frame_choise.combobox2_structural_unit.get()}', level=1)
+        title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+
+        # Добавление таблицы с данными
+        table = doc.add_table(rows=1, cols=5)
+        table.style = 'Table Grid'
+        # название, сетевое название, статус, дата,место установки
+        # "('Рабочая станция', 'WS-FI05-120', 0, datetime.datetime(2024, 5, 8, 9, 21, 17, 350000), '2')"
+
+        # Заголовки столбцов
+        hdr_cells = table.rows[0].cells
+        hdr_cells[0].text = 'Сетевое имя'
+        hdr_cells[1].text = 'IP'
+        hdr_cells[2].text = 'Описание'
+        hdr_cells[3].text = 'Дата ремонта'
+        hdr_cells[4].text = 'Папка с документами'
+
+        for item in data:
+            row_cells = table.add_row().cells
+            row_cells[0].text = str(item[0])  # Название
+            row_cells[1].text = str(item[1])  # Сетевое имя
+            row_cells[2].text = str(item[2])
+            row_cells[3].text = str(item[3])  # Место установки
+            row_cells[4].text = str(item[4])
+
+        # Сохранение документа
+        doc.save(file_path)
 
 
 
