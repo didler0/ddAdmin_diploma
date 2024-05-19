@@ -47,15 +47,12 @@ class Reports(customtkinter.CTkToplevel):
 
         self.first = FirstFrameChoise(self.frame)
         self.first.grid(row=0, column=0, padx=10, pady=10, sticky="", columnspan=3)
-
         # Отчет по статусам работы  - готово
         self.second = FirstFrameReport(self.frame, self.first)
         self.second.grid(row=1, column=0, padx=10, pady=10, sticky="")
-
         # Отчет по ремонтам за промежуток дат
         self.third = SecondFrameReport(self.frame, self.first, self.second)
         self.third.grid(row=1, column=1, padx=10, pady=10, sticky="")
-
         # Отчет на выбранное устройство
         self.fourth = ThirdFrameReport(self.frame, self.first, self.second)
         self.fourth.grid(row=1, column=2, padx=10, pady=10, sticky="ns")
@@ -193,9 +190,6 @@ class FirstFrameReport(customtkinter.CTkFrame):
         # Добавление таблицы с данными
         table = doc.add_table(rows=1, cols=5)
         table.style = 'Table Grid'
-        # название, сетевое название, статус, дата,место установки
-        # "('Рабочая станция', 'WS-FI05-120', 0, datetime.datetime(2024, 5, 8, 9, 21, 17, 350000), '2')"
-
         # Заголовки столбцов
         hdr_cells = table.rows[0].cells
         hdr_cells[0].text = 'Название'
@@ -295,30 +289,17 @@ class SecondFrameReport(customtkinter.CTkFrame):
         date_end_str = self.date_End.get_current_date()
         date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
         date_end = datetime.strptime(date_end_str, "%Y-%m-%d")
-        # Отчет по ремонтам за промежуток дат
-
         data = db_manager.exec_procedure("GetRepairsBetweenTwoDates", date_start, date_end,
                                          f"{self.first_frame_choise.combobox1_branch_office.get()}",
                                          f"{self.first_frame_choise.combobox2_structural_unit.get()}")
-        print(data)
-        # [('WS-FI01-101', '192.168.100.1', 'jhmgh', '2024-05-21', 'repairs\\ФИ-01\\Отдел первый\\Роутер\\2024-05-21_WS-FI01-101')]
-        # сетевое имя
-        # IP
-        # Описание
-        # Дата ремонта
-        # Папка с документами
-        # 5 столбцов
-
         root = tk.Tk()
         root.withdraw()  # Скрытие корневого окна
         file_path = filedialog.asksaveasfilename(defaultextension=".docx",
                                                  filetypes=[("Word Document", "*.docx")],
                                                  title="Выберите место сохранения документа",
                                                  initialfile="ОтчетПоРемонтам")
-
         if not file_path:
             return  # Прерывание функции, если пользователь не выбрал место сохранения
-
         doc = Document()
         title = doc.add_heading(
             f'Отчет по ремонтам устройств.\n Филиал - {self.first_frame_choise.combobox1_branch_office.get()} \n '
@@ -328,8 +309,6 @@ class SecondFrameReport(customtkinter.CTkFrame):
         # Добавление таблицы с данными
         table = doc.add_table(rows=1, cols=5)
         table.style = 'Table Grid'
-        # название, сетевое название, статус, дата,место установки
-        # "('Рабочая станция', 'WS-FI05-120', 0, datetime.datetime(2024, 5, 8, 9, 21, 17, 350000), '2')"
 
         # Заголовки столбцов
         hdr_cells = table.rows[0].cells
