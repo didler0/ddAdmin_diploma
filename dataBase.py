@@ -157,12 +157,118 @@ class DatabaseManager:
             self.create_stored_procedure_GetUniqueDeviceNames()
             self.create_stored_procedure_GetDeviceDetails()
             self.create_stored_procedure_GetDeviceInfoByBranchStrUnitTypeOfDeviceIpNetworkName()
+            self.create_stored_procedure_GetPlaceOfInstallationByBranchAndUnit()
+            self.create_stored_procedure_GetDeviceInfoByBranchStrUnitPlaceOf()
             self.create_trigger()
             self.create_trigger_last_repair()
         except pyodbc.Error as e:
             print("An error occurred:", e)
             self.conn.rollback()
             raise
+    def create_stored_procedure_GetDeviceInfoByBranchStrUnitPlaceOf(self):
+        """
+        Метод для создания хранимой процедуры GetDeviceInfoByBranchStrUnitPlaceOf.
+
+        Returns:
+            bool: True, если процедура была успешно создана, в противном случае - False.
+        """
+        try:
+            procedure_query = """
+            CREATE PROCEDURE GetDeviceInfoByBranchStrUnitPlaceOf
+                @branch NVARCHAR(255),
+                @unit NVARCHAR(255),
+                @place_of NVARCHAR(255)
+            AS
+            BEGIN
+                SELECT
+                    BO.name,
+                    SU.name,
+                    DI.inventory_number,
+                    b.name,
+                    b.network_name,
+                    TD.name,
+                    POI.name,
+                    b.description,
+                    MRP.name,
+                    b.last_status,
+                    b.last_repair,
+                    DI.serial_number,
+                    DI.mac_address,
+                    DI.oper_system,
+                    DI.year_of_purchase,
+                    DI.month_of_warranty,
+                    COMP.processor,
+                    COMP.ram,
+                    COMP.motherboard,
+                    COMP.gpu,
+                    COMP.psu,
+                    COMP.networkCard,
+                    COMP.cooler,
+                    COMP.chasis,
+                    COMP.hdd,
+                    COMP.ssd,
+                    COMP.monitor,
+                    COMP.keyboard,
+                    COMP.mouse,
+                    COMP.audio
+                FROM basic_info b
+                JOIN branch_office BO ON BO.id = b.branch_id
+                JOIN structural_unit SU ON SU.id = b.structural_unit_id
+                JOIN type_of_device TD ON TD.id = b.type_of_device_id
+                JOIN detail_info DI on DI.id = b.detail_info_id
+                JOIN place_of_installation POI on POI.id = b.place_of_installation_id
+                JOIN material_resp_person MRP on MRP.id = b.material_resp_person_id
+                JOIN component COMP ON COMP.id = DI.component_id
+                WHERE BO.name = @branch 
+                  AND SU.name = @unit 
+                  AND POI.name = @place_of;
+            END
+            """
+            self.cur.execute(procedure_query)
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred while creating stored procedure:", e)
+            self.conn.rollback()
+            return False
+
+
+    def create_stored_procedure_GetPlaceOfInstallationByBranchAndUnit(self):
+        """
+        Метод для создания хранимой процедуры GetPlaceOfInstallationByBranchAndUnit.
+
+        Returns:
+            bool: True, если процедура была успешно создана, в противном случае - False.
+        """
+        try:
+            procedure_query = """
+                            CREATE PROCEDURE GetPlaceOfInstallationByBranchAndUnit
+                @branch_name NVARCHAR(MAX),
+                @structural_unit_name NVARCHAR(MAX)
+            AS
+            BEGIN
+                SELECT DISTINCT
+                    td.name
+                FROM 
+                    basic_info b
+                JOIN 
+                    place_of_installation td 
+                ON 
+                    td.id = b.place_of_installation_id
+                JOIN branch_office bo ON bo.id = b.branch_id
+                JOIN structural_unit st ON st.id = b.structural_unit_id
+                WHERE 
+                    bo.name = @branch_name
+                    AND st.name = @structural_unit_name;
+            END
+            """
+            self.cur.execute(procedure_query)
+            self.conn.commit()
+            return True
+        except pyodbc.Error as e:
+            print("An error occurred while creating stored procedure:", e)
+            self.conn.rollback()
+            return False
 
     def create_stored_procedure_GetDeviceInfoByBranchStrUnitTypeOfDeviceIpNetworkName(self):
         """

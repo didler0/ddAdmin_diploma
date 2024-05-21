@@ -8,6 +8,8 @@ from hPyT import *
 from PIL import Image
 import os
 from tkcalendar import Calendar
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
 from CTkToolTip import *
 from docx import *
 from datetime import datetime, timedelta
@@ -48,17 +50,18 @@ class Reports(customtkinter.CTkToplevel):
         self.first = FirstFrameChoise(self.frame)
         self.first.grid(row=0, column=0, padx=10, pady=10, sticky="", columnspan=3)
         # Отчет по статусам работы  - готово
-        self.second = FirstFrameReport(self.frame, self.first)
-        self.second.grid(row=1, column=0, padx=10, pady=10, sticky="")
-        # Отчет по ремонтам за промежуток дат
-        self.third = SecondFrameReport(self.frame, self.first, self.second)
-        self.third.grid(row=1, column=1, padx=10, pady=10, sticky="")
-        # Отчет на выбранное устройство
-        self.fourth = ThirdFrameReport(self.frame, self.first, self.second)
-        self.fourth.grid(row=1, column=2, padx=10, pady=10, sticky="ns")
+        #self.second = FirstFrameReport(self.frame, self.first)
+        #self.second.grid(row=1, column=0, padx=10, pady=10, sticky="")
+        ## Отчет по ремонтам за промежуток дат
+        #self.third = SecondFrameReport(self.frame, self.first, self.second)
+        #self.third.grid(row=1, column=1, padx=10, pady=10, sticky="")
+        ## Отчет на выбранное устройство
+        #self.fourth = ThirdFrameReport(self.frame, self.first, self.second)
+        #self.fourth.grid(row=1, column=2, padx=10, pady=10, sticky="ns")
         # Отчет по месту установки
-
-        # отчет по всем устройствам филиала
+        self.fifth = FourthFrameReport(self.frame, self.first)
+        self.fifth.grid(row=1, column=3, padx=10, pady=10, sticky="ns")
+        #
 
         # отчет по всем устройствам по структурного подразделения
 
@@ -335,7 +338,7 @@ class ThirdFrameReport(customtkinter.CTkFrame):
         super().__init__(master)
         self.first_frame_choise = first_frame_ch_instance
         self.second_frame_instance = second_instance
-        self.grid_rowconfigure((1,2,3,4),weight=1)
+        self.grid_rowconfigure((1, 2, 3, 4), weight=1)
         self.configure(border_color="dodgerblue", border_width=3)
         customtkinter.CTkLabel(master=self, text="Отчет по выбранному устройству", fg_color="gray30",
                                font=("Arial", 14)).grid(row=0, columnspan=3, column=0, padx=10, pady=10, sticky="ew")
@@ -379,6 +382,7 @@ class ThirdFrameReport(customtkinter.CTkFrame):
             CTkMessagebox(title="Успех", message="Типы устройств успешно загуржены", icon="check")
         except Exception as e:
             CTkMessagebox(title="Ошибка", message=f"Ошибка на этапе загрузки типов устройств!\n {e}", icon="warning")
+
     def load_devices(self, choice):
         print(choice)
         branch_office = self.first_frame_choise.combobox1_branch_office.get()
@@ -399,13 +403,11 @@ class ThirdFrameReport(customtkinter.CTkFrame):
         self.device_combob.configure(values=data)
         self.update()
 
-
     def make_report(self):
         branch_office = self.first_frame_choise.combobox1_branch_office.get()
         structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
         type_of_device = self.type_of_device_combob.get()
         device = self.device_combob.get()
-
 
         # Check if either combobox is empty
         if not branch_office.strip():
@@ -436,7 +438,7 @@ class ThirdFrameReport(customtkinter.CTkFrame):
                 return  # Прерывание функции, если пользователь не выбрал место сохранения
 
             data = db_manager.exec_procedure("GetDeviceInfoByBranchStrUnitTypeOfDeviceIpNetworkName",
-                                             branch_office,structural_unit,type_of_device,ip_address,network_name)
+                                             branch_office, structural_unit, type_of_device, ip_address, network_name)
             print(data)
             doc = DocxTemplate("resources\\pattern_for_third_report.docx")
             context = {
@@ -478,6 +480,132 @@ class ThirdFrameReport(customtkinter.CTkFrame):
             CTkMessagebox(title="Ошибка", message="Ошибка при формировании отчета!", icon="warning")
 
 
+class FourthFrameReport(customtkinter.CTkFrame):
+    def __init__(self, master, first_frame_ch_instance):
+        super().__init__(master)
+        self.first_frame_choise = first_frame_ch_instance
+        self.grid_rowconfigure((1, 2, 3, 4), weight=1)
+        self.configure(border_color="dodgerblue", border_width=3)
+        customtkinter.CTkLabel(master=self, text="Отчет по месту установки", fg_color="gray30",
+                               font=("Arial", 14)).grid(row=0, columnspan=3, column=0, padx=10, pady=10, sticky="ew")
+        customtkinter.CTkButton(master=self, text="Загрузить места установки",
+                                command=lambda: self.load_locations()).grid(
+            row=1, column=0, padx=10, pady=10, sticky="ew", columnspan=3)
+
+        customtkinter.CTkLabel(master=self, text="Выберите место установки").grid(
+            row=2, column=0, padx=10, pady=10)
+
+        self.place_of_install_combob = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly")
+        self.place_of_install_combob.grid(row=2, column=1, padx=10, pady=10)
+
+        customtkinter.CTkButton(master=self, text="Сформировать отчет",
+                                command=lambda: self.make_report()).grid(
+            row=3, column=0, padx=10, pady=10, sticky="ew", columnspan=3)
+
+    def load_locations(self):
+        branch_office = self.first_frame_choise.combobox1_branch_office.get()
+        structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
+        if not branch_office.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите филиал!", icon="warning")
+            return
+        if not structural_unit.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите структурное подразделение!", icon="warning")
+            return
+        try:
+
+            data = db_manager.exec_procedure("GetPlaceOfInstallationByBranchAndUnit",branch_office,structural_unit)
+            data = [str(row[0]) for row in data]
+            self.place_of_install_combob.configure(values=data)
+            self.update()
+            CTkMessagebox(title="Успех", message="Типы устройств успешно загуржены", icon="check")
+
+        except Exception as e:
+            CTkMessagebox(title="Ошибка", message=f"Ошибка на этапе загрузки типов устройств!\n {e}", icon="warning")
+
+    def make_report(self):
+        branch_office = self.first_frame_choise.combobox1_branch_office.get()
+        structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
+        place_of_install = self.place_of_install_combob.get()
+        if not branch_office.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите филиал!", icon="warning")
+            return
+        if not structural_unit.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите структурное подразделение!", icon="warning")
+            return
+        if not place_of_install.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите место установки!", icon="warning")
+            return
+        try:
+            data = db_manager.exec_procedure("GetDeviceInfoByBranchStrUnitPlaceOf",branch_office,structural_unit,place_of_install)
+            print(data)
+            wb = Workbook()
+            ws = wb.active
+
+            # Заголовки столбцов
+            headers = [
+                'Филиал',
+                'Структурное подразделение',
+                'Инвентарный номер',
+                'Наименование устройства',
+                'Сетевое имя',
+                'Тип устройства',
+                'Установлен в',
+                'Описание',
+                'Материально ответственное лицо',
+                'Последний статус',
+                'Дата последнего ремонта',
+                'Серийный номер',
+                'MAC адрес',
+                'Операционная система',
+                'Год покупки',
+                'Месяцы гарантии',
+                'Процессор',
+                'ОЗУ',
+                'Материнская плата',
+                'Видеокарта',
+                'Блок питания',
+                'Сетевая карта',
+                'Кулер',
+                'Корпус',
+                'HDD',
+                'SSD',
+                'Монитор',
+                'Клавиатура',
+                'Мышь',
+                'Звуковые устройства'
+            ]
+
+            for col, header in enumerate(headers, start=1):
+                ws.cell(row=1, column=col, value=header)
+                # Автоподбор ширины столбцов
+                column_letter = get_column_letter(col)
+                max_length = max(
+                    len(str(row[col - 1])) for row in data)  # Вычисляем максимальную длину данных в столбце
+                adjusted_width = (max_length + 2) * 1.2  # Увеличиваем ширину на 20% от максимальной длины
+                ws.column_dimensions[column_letter].width = adjusted_width
+
+            # Заполнение данными
+            for row, item in enumerate(data, start=2):
+                for col, value in enumerate(item, start=1):
+                    ws.cell(row=row, column=col, value=value)
+            # Добавляем строку с данными о филиале, структурном подразделении и месте установки
+            ws.append(["Филиал:", branch_office])
+            ws.append(["Структурное подразделение:", structural_unit])
+            ws.append(["Место установки:", place_of_install])
+            ws.append([])  # Пустая строка для разделения
+
+            root = tk.Tk()
+            root.withdraw()  # Скрыть корневое окно
+
+            file_path = filedialog.asksaveasfilename(defaultextension=".xlsx",
+                                                     filetypes=[("Excel files", "*.xlsx")],
+                                                     title="Выберите место сохранения Excel-файла",
+                                                     initialfile=f"Отчет_по_устройствам_{branch_office}_{structural_unit}_{place_of_install}.xlsx")
+            if file_path:
+                wb.save(file_path)
+                CTkMessagebox(title="Успех", message="Отчет успешно сохранен!", icon="check")
+        except Exception as e:
+            CTkMessagebox(title="Ошибка", message=f"Ошибка на этапе формирования отчета!\n {e}", icon="warning")
 
 
 if __name__ == "__main__":
