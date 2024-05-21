@@ -175,7 +175,7 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
 
             old_value = self.list_widgets_only_entry[idx].get()
 
-            dialog = customtkinter.CTkInputDialog(text="Введите новое значение для структурного подразделения:", title="Test")
+            dialog = customtkinter.CTkInputDialog(text="Введите новое значение для структурного подразделения:", title="Редактирование")
             new_value = dialog.get_input()  # waits for input
 
 
