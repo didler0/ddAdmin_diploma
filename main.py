@@ -54,7 +54,8 @@ class UpperFrame(customtkinter.CTkFrame):
             {"text": "Редактировать филиалы", "command": self.EditBranch},
             {"text": "Импорт из Excel", "command": self.ImportFromExcel},
             {"text": "Формирование отчетов", "command": self.ExportPc},
-            {"text": "Ремонты", "command": self.Repairs, "fg_color": "#FF8C19", "hover_color": "#4DFFFF", "text_color": "black"}
+            {"text": "Ремонты", "command": self.Repairs, "fg_color": "#FF8C19", "hover_color": "#4DFFFF", "text_color": "black"},
+            {"text":"БД", "command": self.OpenConnectionString,"width":30}
         ]
 
         # Создание и размещение кнопок
@@ -70,6 +71,9 @@ class UpperFrame(customtkinter.CTkFrame):
                 button.configure(hover_color=button_info["hover_color"])
             if "text_color" in button_info:
                 button.configure(text_color=button_info["text_color"])
+            if "width" in button_info:
+                button.configure(width=30)
+                CTkToolTip(button, message="Открыть файл с строкой подключения к БД")
 
         # Кнопка для смены темы приложения
         self.AppearanceButton = customtkinter.CTkOptionMenu(
@@ -112,6 +116,10 @@ class UpperFrame(customtkinter.CTkFrame):
             self.toplevel_window = Reports(self)
         else:
             self.toplevel_window.focus()
+    def OpenConnectionString(self):
+        """Открывает файл с трокой для подключения к базе данных"""
+        os.startfile("database_info.txt")
+
 
 
 
