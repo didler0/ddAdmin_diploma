@@ -514,7 +514,7 @@ class ThirdFrame(customtkinter.CTkFrame):
                     name (str): Имя для новой папки ремонта.
 
                 Returns:
-                    str: Путь к созданной папке.
+                    str: Путь к созданной папке..
                 """
         try:
             # Получите путь к папке repairs
