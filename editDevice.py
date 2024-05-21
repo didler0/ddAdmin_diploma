@@ -68,6 +68,7 @@ class EditDevice_(customtkinter.CTkToplevel):
         self.load_dataALL()
 
     def update_all_data(self):
+        """Метод для обновления всех данных"""
         try:
             data_basic = db_manager.get_data("basic_info", "*", f"id = {self.basic_id_}")
             if data_basic:
@@ -140,6 +141,9 @@ class EditDevice_(customtkinter.CTkToplevel):
             self.success_("Данные успешно обновлены!")
 
     def success_(self, message_):
+        """Метод для закрытия окна при нажатии кнопки "ОК"\
+            :arg message_ - сообщение для показа в messagebox
+        """
         # get yes/no answers
         msg = CTkMessagebox(title="Успех!", cancel_button=None, message=message_, icon="check", option_1="Ok")
         response = msg.get()
@@ -150,6 +154,7 @@ class EditDevice_(customtkinter.CTkToplevel):
             pass
 
     def delete_all_data(self):
+        """Метод для удаления данных из базы данных"""
         try:
             db_manager.delete_data("basic_info", f"id = {self.basic_id_}")
             self.success_("Данные успешно удалены!")
@@ -329,11 +334,18 @@ class EditDevice_(customtkinter.CTkToplevel):
                 self.widgetsBasic.append(textBox)
 
     def load_data(self, choice):
+        """Метод для загрузки данных в комбобокс
+            :arg choice - текущий выбор комбобокса
+        """
         data = db_manager.exec_procedure("GetStructuralUnits", choice)
         data = [str(row[0]) for row in data]
         self.FillComboBox(self.combobox2_structural_unit, data)
 
     def FillComboBox(self, combobox, data_):
+        """    Метод для заполнения комбобокса данными
+        :param combobox:
+        :param data_:
+        """
         data__ = [str(data) for data in data_]
         combobox.configure(values=data__)
         self.update()

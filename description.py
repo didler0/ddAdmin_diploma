@@ -230,11 +230,19 @@ class DescriptionViewer(customtkinter.CTkToplevel):
                 self.widgetsBasic.append(textBox)
 
     def load_data(self, choice):
+        """Метод для загрузки данных из БД в комбобокс.
+            :arg choice - текущий выбор комбобокса
+        """
+
         data = db_manager.exec_procedure("GetStructuralUnits", choice)
         data = [str(row[0]) for row in data]
         self.FillComboBox(self.combobox2_structural_unit, data)
 
     def FillComboBox(self, combobox, data_):
+        """Метод для заполнения комбобокса
+            :arg combobox - комбобокс, в который нужно поместить данные
+            :arg data_ - данные, которые нужно поместить в combpbox
+        """
         data__ = [str(data) for data in data_]
         combobox.configure(values=data__)
         self.update()

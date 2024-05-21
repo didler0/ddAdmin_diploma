@@ -22,12 +22,25 @@ class PhotoViewer(customtkinter.CTkToplevel):
     """Класс для просмотра фотографий."""
 
     def __init__(self, *args, basic_id=None, **kwargs):
+        """
+                Инициализирует окно просмотра фотографий.
+
+                Args:
+                    *args: Позиционные аргументы.
+                    basic_id (int): Идентификатор основной информации о фото.
+                    **kwargs: Аргументы ключевых слов.
+                """
         super().__init__(*args, **kwargs)
         photo_id = basic_id
         self.PhotoView(photo_id)
 
     def PhotoView(self, photo_id):
-        """Просмотр фотографий."""
+        """
+        Просмотр фотографий.
+
+        Args:
+            photo_id (int): Идентификатор фотографии.
+        """
         try:
             if hasattr(self, 'additionalWIN') and self.additionalWIN.winfo_exists():
                 self.additionalWIN.focus()
@@ -84,7 +97,15 @@ class PhotoViewer(customtkinter.CTkToplevel):
             print(f"Exception in PhotoViewer: {e}")
 
     def get_image_paths(self, photo_data):
-        """Получает пути к изображениям."""
+        """
+        Получает пути к изображениям.
+
+        Args:
+            photo_data (list): Данные о фотографиях.
+
+        Returns:
+            list: Пути к изображениям.
+        """
         return [os.path.join("images", photo[2]) for photo in photo_data]
 
     def update_carousel(self):

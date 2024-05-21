@@ -125,6 +125,7 @@ class ComboBoxWithButtons(customtkinter.CTkFrame):
                 pass
 
     def commit_value(self):
+        """Метод для применения сделанных изменений и записи их в БД"""
         current_values = self.get_all_values()
         print(current_values)
         data = db_manager.get_data(self.table, "name")
@@ -167,8 +168,10 @@ class ComboBoxWithButtons(customtkinter.CTkFrame):
         self.update()
 
     def clear_data(self):
+        """Отчитска данных в комбобоксе"""
         self.combobox.set("")
         
     def set_current_value(self,val):
+        """Метод для установки текущего значения"""
         self.combobox.set(val)
 

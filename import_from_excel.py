@@ -19,7 +19,9 @@ db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
 
 
 class ImportDataFromExcel(customtkinter.CTkToplevel):
+    """Класс для реализации функциональности импорта данных из Excel в базу данных."""
     def __init__(self, *args, **kwargs):
+        """Инициализация класса и создание окна."""
         super().__init__(*args, **kwargs)
         self.create_window()
         self.file_path = pd.DataFrame
@@ -99,6 +101,7 @@ class ImportDataFromExcel(customtkinter.CTkToplevel):
             CTkMessagebox(title="Ошибка", message="Ошибка при чтении файла!\nВозможно файл имеет неверный формат.\nОзнакомьтесь с верным форматом!", icon="cancel")
 
     def insert_into_db(self):
+        """Метод для вставки данных в БД"""
         try:
             type_of_device = self.file_path['Тип устройства'].unique()
             fillial = self.file_path['Филиал'].unique()

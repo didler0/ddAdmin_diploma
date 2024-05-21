@@ -71,6 +71,7 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
         add_new_structural_units_to_branch_button.grid(row=1, column=0, padx=10, pady=10, sticky='nsew')
 
     def add_new_structural_units_to_branch(self):
+        """Метод для добавления нового структруного подразделения к существующему филиалу"""
         try:
             list_of_str_units = []
             branch_office = self.branch_office_combob.get_current_value()
@@ -120,6 +121,7 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
             return
 
     def callback_(self, choice):
+        """Метод для обработки события выбора в комбобоксе."""
         assigned_structural_units = db_manager.exec_procedure("GetStructuralUnits", choice)
         assigned_structural_units = [item[0] for item in assigned_structural_units]
 
@@ -168,6 +170,7 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
             self.list_widgets.append(add_button)
 
     def edit_entry(self, idx):
+        """Метод для редактирования элемента списка."""
         try:
 
             old_value = self.list_widgets_only_entry[idx].get()
@@ -213,6 +216,7 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
             return
 
     def delete_entry(self, idx):
+        """Метод для удаления элемента списка."""
         try:
             # Получаем значение структурного подразделения, которое нужно удалить
             value_to_delete = self.list_widgets_only_entry[idx].get()
@@ -232,6 +236,7 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
         except Exception as e:
             CTkMessagebox(title="Ошибка", message="Удаление не доступно для элементов не добавленных в базу данных! Пустые строки при добавлении в базу данных ИГНОРИРУЮТСЯ!", icon="cancel")
     def add_new_entry(self, new_row_index):
+        """Метод для добавления новой строки."""
         # Remove the "+" button
         add_button = self.list_widgets.pop()
         add_button.destroy()

@@ -85,6 +85,7 @@ class AddDevice_(customtkinter.CTkToplevel):
 
 
     def open_info_popup(self):
+        """Метод для открытия окна с информацией"""
         CTkMessagebox(title="Информация",
                       message=" Поля, требующие заполнения, отмечены символом '*'.\n"
                               " Заполнение всех полей во вкладках 'Базовая информация' и 'Детальное описание' является обязательным.\n"
@@ -145,8 +146,10 @@ class AddDevice_(customtkinter.CTkToplevel):
                 textBox.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(textBox)
     def load_data(self,choice):
-        print(choice)
-
+        """Метод для загрузки данных из БД в комбобокс
+        Args:
+            choice: Выбранный элемент в комбобоксе.
+        """
         data= db_manager.exec_procedure("GetStructuralUnits",choice)
         data = [str(row[0]) for row in data]
         self.FillComboBox(self.combobox_structural_unit,data)
@@ -154,7 +157,6 @@ class AddDevice_(customtkinter.CTkToplevel):
     def create_detail_info_tab(self, labels_detail):
         """
         Создание вкладки для детальной информации.
-
         Args:
             labels_detail: Список меток для детальной информации.
         """
@@ -343,6 +345,7 @@ class AddDevice_(customtkinter.CTkToplevel):
             print(f"An error occurred while adding computer: {e}")
 
     def FillComboBox(self, combobox, data_):
+        """Заполнение комбобокса данными"""
         sasha = [str(data) for data in data_]
         combobox.configure(values=sasha)
         self.update()
