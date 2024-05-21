@@ -18,7 +18,27 @@ db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
 # вынести все к хуям
 
 class Repair(customtkinter.CTkToplevel):
+    """
+    Класс для создания окна управления ремонтами.
+
+    Attributes:
+        second (customtkinter.CTkFrame): Фрейм для второй части окна.
+        last (customtkinter.CTkFrame): Фрейм для последней части окна.
+        first (customtkinter.CTkFrame): Фрейм для первой части окна.
+
+    Methods:
+        __init__: Инициализация объекта Repair.
+        create_window: Создание и настройка окна ремонтов.
+    """
+
     def __init__(self, *args, **kwargs):
+        """
+        Инициализирует объект Repair.
+
+        Args:
+            *args: Позиционные аргументы.
+            **kwargs: Именованные аргументы.
+        """
         super().__init__(*args, **kwargs)
 
         self.second = customtkinter.CTkFrame
@@ -28,7 +48,7 @@ class Repair(customtkinter.CTkToplevel):
 
     def create_window(self):
         """
-        Создание окна Ремонтов.
+        Создает и настраивает окно Ремонтов.
         """
         self.title("Ремонты")
         self.geometry("600x750")
@@ -52,7 +72,30 @@ class Repair(customtkinter.CTkToplevel):
 
 
 class SecondFrame(customtkinter.CTkFrame):
+    """
+    Класс для создания и управления второй частью окна управления ремонтами.
+
+    Attributes:
+        combobox1_repair (customtkinter.CTkComboBox): Комбобокс для выбора ремонта.
+        DecriptiontextBox (customtkinter.CTkTextbox): Поле для ввода описания ремонта.
+        DataOfRepaor_entry (customtkinter.CTkEntry): Поле для ввода даты ремонта.
+        CalendarOpenButton (customtkinter.CTkButton): Кнопка для открытия календаря выбора даты.
+        OpenFolderRepairButton (customtkinter.CTkButton): Кнопка для открытия папки с документами ремонта.
+
+    Methods:
+        clear_whole_data: Очищает все данные в элементах интерфейса.
+        open_folder: Открывает папку с документами выбранного ремонта.
+        load_repair: Загружает информацию о выбранном ремонте.
+        select_date: Открывает календарь для выбора даты ремонта.
+    """
     def __init__(self, *args, **kwargs):
+        """
+                Инициализирует объект SecondFrame.
+
+                Args:
+                    *args: Позиционные аргументы.
+                    **kwargs: Именованные аргументы.
+                """
         super().__init__(*args, **kwargs)
         self.grid_columnconfigure((0, 1), weight=1)
         self.configure(border_color="dodgerblue", border_width=3)
@@ -84,10 +127,16 @@ class SecondFrame(customtkinter.CTkFrame):
         CTkToolTip(self.OpenFolderRepairButton, message="Открыть папку с документами к выбранному ремонту.")
 
     def clear_whole_data(self):
+        """
+                Очищает все данные в элементах интерфейса.
+                """
         self.DataOfRepaor_entry.delete(0, tkinter.END)
         self.DecriptiontextBox.delete("1.0", tkinter.END)
 
     def open_folder(self):
+        """
+                Открывает папку с документами выбранного ремонта.
+                """
         currVal = self.combobox1_repair.get()
         parts = currVal.split('|')  # Разделить строку на подстроки по символу '|'
         if len(parts) > 0:
@@ -111,6 +160,12 @@ class SecondFrame(customtkinter.CTkFrame):
                 CTkMessagebox(title="Ошибка", message="Возможно папка была создана некорректно!", icon="cancel")
 
     def load_repair(self, choice):
+        """
+                Загружает информацию о выбранном ремонте и отображает её в соответствующих полях.
+
+                Args:
+                    choice (str): Выбранный ремонт в комбобоксе.
+                """
         self.clear_whole_data()
         parts = choice.split('|')
         repair_id = [part.strip() for part in parts]
@@ -126,6 +181,17 @@ class SecondFrame(customtkinter.CTkFrame):
 
 
     def select_date(self):
+        """
+        Открывает календарь для выбора даты ремонта.
+
+        Если окно календаря уже существует, оно будет фокусироваться.
+        При выборе даты, дата будет вставлена в соответствующее поле и окно календаря закроется.
+        В случае возникновения исключения, оно будет выведено в консоль.
+
+        Attributes:
+            additionalWIN (customtkinter.CTkToplevel): Окно календаря.
+        """
+
         try:
             if hasattr(self, 'additionalWIN') and self.additionalWIN.winfo_exists():
                 self.additionalWIN.focus()
@@ -139,6 +205,9 @@ class SecondFrame(customtkinter.CTkFrame):
             cal = Calendar(self.additionalWIN, selectmode='day', date_pattern="yyyy-mm-dd")
 
             def set_date():
+                """
+                Устанавливает выбранную дату в энтри
+                """
                 selected_date = cal.get_date()
                 self.DataOfRepaor_entry.delete(0, 'end')
                 self.DataOfRepaor_entry.insert(0, selected_date)
@@ -151,7 +220,31 @@ class SecondFrame(customtkinter.CTkFrame):
 
 
 class FirstFrame(customtkinter.CTkFrame):
+    """
+        Класс для создания и управления первой частью окна управления ремонтами.
+
+        Attributes:
+            secondFrameInstance (SecondFrame): Экземпляр второго фрейма для взаимодействия.
+            combobox1_branch_office (customtkinter.CTkComboBox): Комбобокс для выбора филиала.
+            combobox2_structural_unit (customtkinter.CTkComboBox): Комбобокс для выбора структурного подразделения.
+            combobox3_type_of_device (customtkinter.CTkComboBox): Комбобокс для выбора типа устройства.
+            combobox4_device (customtkinter.CTkComboBox): Комбобокс для выбора устройства.
+
+        Methods:
+            load_third_data: Загружает данные о типе устройства.
+            load_main_data: Загружает основную информацию о ремонте.
+            load_second_data: Загружает данные о структурных подразделениях.
+            load_data: Загружает данные о филиалах.
+            FillComboBox: Заполняет комбобокс данными.
+        """
     def __init__(self, master, secondFrameInstance):
+        """
+                Инициализирует объект FirstFrame.
+
+                Args:
+                    master: Родительский виджет.
+                    secondFrameInstance (SecondFrame): Экземпляр второго фрейма для взаимодействия.
+                """
         super().__init__(master)
         self.secondFrameInstance = secondFrameInstance
 
@@ -185,6 +278,12 @@ class FirstFrame(customtkinter.CTkFrame):
         CTkToolTip(self.combobox4_device, message="Выберите устройствo.")
 
     def load_third_data(self, choice):
+        """
+                Загружает данные о типе устройства и заполняет комбобокс устройств.
+
+                Args:
+                    choice (str): Выбранный тип устройства.
+                """
         type_of_device_id = db_manager.get_data("type_of_device", "id", f"name = '{choice}'")[0][0]
 
         branch_id = db_manager.get_data("branch_office", "id", f"name = '{self.combobox1_branch_office.get()}'")[0][0]
@@ -198,6 +297,12 @@ class FirstFrame(customtkinter.CTkFrame):
         self.FillComboBox(self.combobox4_device, str_data_combobox4)
 
     def load_main_data(self, choice):
+        """
+                Загружает основную информацию о ремонте и заполняет комбобокс ремонтов.
+
+                Args:
+                    choice (str): Выбранное устройство.
+                """
         parts = choice.split('|')
         result_list = [part.strip() for part in parts]
         print(result_list[0])
@@ -217,6 +322,12 @@ class FirstFrame(customtkinter.CTkFrame):
             CTkMessagebox(title="Ошибка", message=f"Возможно не добавлено ни одного ремонта.\n{e}", icon="cancel")
 
     def load_second_data(self, choice):
+        """
+                Загружает данные о структурных подразделениях и уникальных типах устройств.
+
+                Args:
+                    choice (str): Выбранное структурное подразделение.
+                """
         branch_id = db_manager.get_data("branch_office", "id", f"name = '{self.combobox1_branch_office.get()}'")[0][0]
         structural_unit_id = db_manager.get_data("structural_unit", "id", f"name = '{choice}'")[0][0]
         result = db_manager.exec_procedure("GetInfoByBranchAndStructuralUnit", branch_id, structural_unit_id)
@@ -226,18 +337,52 @@ class FirstFrame(customtkinter.CTkFrame):
         self.FillComboBox(self.combobox3_type_of_device, unique_type_of_device)
 
     def load_data(self, choice):
+        """
+                Загружает данные о филиалах и заполняет комбобокс структурных подразделений.
+
+                Args:
+                    choice (str): Выбранный филиал.
+                """
         data = db_manager.exec_procedure("GetStructuralUnits", choice)
         data = [str(row[0]) for row in data]
         self.FillComboBox(self.combobox2_structural_unit, data)
 
     def FillComboBox(self, combobox, data_):
+        """
+               Заполняет комбобокс данными.
+
+               Args:
+                   combobox (customtkinter.CTkComboBox): Комбобокс для заполнения.
+                   data_ (list): Данные для заполнения комбобокса.
+               """
         data__ = [str(data) for data in data_]
         combobox.configure(values=data__)
         self.update()
 
 
 class ThirdFrame(customtkinter.CTkFrame):
+    """
+        Класс для создания и управления третьей частью окна управления ремонтами.
+
+        Attributes:
+            secondFrameInstance (SecondFrame): Экземпляр второго фрейма для взаимодействия.
+            firstFrameInstance (FirstFrame): Экземпляр первого фрейма для взаимодействия.
+
+        Methods:
+            add_repair: Добавляет новый ремонт.
+            save_changes_repair: Сохраняет изменения в ремонте.
+            delete_repair: Удаляет выбранный ремонт.
+            create_repair_folder: Создает папку для нового ремонта.
+        """
     def __init__(self, master, secondFrameInstance,firstFrameInstance):
+        """
+                Инициализирует объект ThirdFrame.
+
+                Args:
+                    master: Родительский виджет.
+                    secondFrameInstance (SecondFrame): Экземпляр второго фрейма для взаимодействия.
+                    firstFrameInstance (FirstFrame): Экземпляр первого фрейма для взаимодействия.
+                """
         super().__init__(master)
         self.secondFrameInstance = secondFrameInstance
         self.firstFrameInstance = firstFrameInstance
@@ -256,6 +401,9 @@ class ThirdFrame(customtkinter.CTkFrame):
         del_repair_button.grid(row=0, column=2, pady=5, padx=10, sticky="ew")
 
     def add_repair(self):
+        """
+                Добавляет новый ремонт, создает соответствующую папку и вносит данные в базу данных.
+                """
         descr = self.secondFrameInstance.DecriptiontextBox.get("1.0", "end-1c")
         date = self.secondFrameInstance.DataOfRepaor_entry.get()
         choice = self.firstFrameInstance.combobox4_device.get()
@@ -306,6 +454,9 @@ class ThirdFrame(customtkinter.CTkFrame):
             print(f"An error occurred: {e}")
 
     def save_changes_repair(self):
+        """
+                Сохраняет изменения в описании и дате ремонта в базе данных.
+                """
         try:
             # Получаем описание ремонта и дату
             descr = self.secondFrameInstance.DecriptiontextBox.get("1.0", "end-1c")
@@ -330,6 +481,9 @@ class ThirdFrame(customtkinter.CTkFrame):
             print(f"An error occurred: {e}")
 
     def delete_repair(self):
+        """
+                Удаляет выбранный ремонт из базы данных и соответствующую папку на диске.
+                """
         try:
             choice = self.secondFrameInstance.combobox1_repair.get()
             # Проверяем, не является ли choice пустым
@@ -353,6 +507,15 @@ class ThirdFrame(customtkinter.CTkFrame):
             print(f"An error occurred: {e}")
 
     def create_repair_folder(self, name):
+        """
+                Создает папку для нового ремонта.
+
+                Args:
+                    name (str): Имя для новой папки ремонта.
+
+                Returns:
+                    str: Путь к созданной папке.
+                """
         try:
             # Получите путь к папке repairs
             repairs_folder = "repairs"

@@ -121,7 +121,7 @@ class FirstFrameReport(customtkinter.CTkFrame):
                                                                                                 column=0, padx=2,
                                                                                                 pady=2, sticky="ew")
 
-        self.MakeReport1Button = customtkinter.CTkButton(master=self, text="Сформировать и открыть отчет",
+        self.MakeReport1Button = customtkinter.CTkButton(master=self, text="Сформировать отчет",
                                                          command=lambda: self.make_report())
         self.MakeReport1Button.grid(row=4, column=0, columnspan=2, pady=10, padx=10, sticky="ew")
 
@@ -247,7 +247,7 @@ class SecondFrameReport(customtkinter.CTkFrame):
                                                                                                 column=0, padx=2,
                                                                                                 pady=2, sticky="ew")
 
-        self.MakeReport1Button = customtkinter.CTkButton(master=self, text="Сформировать и открыть отчет",
+        self.MakeReport1Button = customtkinter.CTkButton(master=self, text="Сформировать отчет",
                                                          command=lambda: self.make_report())
         self.MakeReport1Button.grid(row=4, column=0, columnspan=2, pady=10, padx=10, sticky="ew")
 
