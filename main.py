@@ -40,14 +40,15 @@ def change_appearance_mode_event(new_appearance_mode: str):
 
 
 class UpperFrame(customtkinter.CTkFrame):
-    """Класс для верхнего фрейма"""
+    """Класс для верхнего фрейма, содержащего кнопки и функциональность"""
 
     def __init__(self, master):
-        """Конструктор класса"""
+        """Инициализация верхнего фрейма"""
         super().__init__(master)
 
-        self.toplevel_window = None
+        self.toplevel_window = None  # Переменная для хранения ссылки на верхнеуровневое окно
 
+        # Список с информацией о кнопках
         button_data = [
             {"text": "Добавить устройство", "command": self.AddPc},
             {"text": "Редактировать филиалы", "command": self.EditBranch},
@@ -56,11 +57,13 @@ class UpperFrame(customtkinter.CTkFrame):
             {"text": "Ремонты", "command": self.Repairs, "fg_color": "#FF8C19", "hover_color": "#4DFFFF", "text_color": "black"}
         ]
 
+        # Создание и размещение кнопок
         for idx, button_info in enumerate(button_data):
             button = customtkinter.CTkButton(master=self, text=button_info["text"],
                                              command=lambda command=button_info["command"]: command())
-            CTkToolTip(button, message=button_info["text"])
+            CTkToolTip(button, message=button_info["text"])  # Всплывающая подсказка
             button.grid(row=0, column=idx, pady=10, padx=10)
+            # Применение цветов к кнопкам, если они указаны
             if "fg_color" in button_info:
                 button.configure(fg_color=button_info["fg_color"])
             if "hover_color" in button_info:
@@ -68,6 +71,7 @@ class UpperFrame(customtkinter.CTkFrame):
             if "text_color" in button_info:
                 button.configure(text_color=button_info["text_color"])
 
+        # Кнопка для смены темы приложения
         self.AppearanceButton = customtkinter.CTkOptionMenu(
             self, values=["Тёмная", "Светлая"], command=change_appearance_mode_event)
         CTkToolTip(self.AppearanceButton, message="Смена темы приложения")
@@ -75,46 +79,47 @@ class UpperFrame(customtkinter.CTkFrame):
             row=0, column=len(button_data), padx=20, pady=(10, 10))
 
     def AddPc(self):
-        """Метод для открытия окна добавления устройства"""
+        """Открывает окно добавления устройства"""
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.toplevel_window = AddDevice_(self)
         else:
             self.toplevel_window.focus()
 
     def EditBranch(self):
-        """Метод для открытия окна редактирования филиалов"""
+        """Открывает окно редактирования филиалов"""
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.toplevel_window = AioBranchOfficeStructuralUnit(self)
         else:
             self.toplevel_window.focus()
 
     def Repairs(self):
-        """Метод для открытия окна ремонтов"""
+        """Открывает окно ремонтов"""
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
-
             self.toplevel_window = Repair(self)
         else:
             self.toplevel_window.focus()
-    def ImportFromExcel(self):
-        """Метод для открытия окна Импрота из экселя"""
-        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
 
+    def ImportFromExcel(self):
+        """Открывает окно импорта данных из Excel"""
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.toplevel_window = ImportDataFromExcel(self)
         else:
             self.toplevel_window.focus()
-    def ExportPc(self):
-        """Метод для открытия окна экспорта данных"""
-        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
 
+    def ExportPc(self):
+        """Открывает окно экспорта данных"""
+        if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.toplevel_window = Reports(self)
         else:
             self.toplevel_window.focus()
-            # стальные методы класса остаются без изменений
+
 
 
 class MiddleFrame(customtkinter.CTkFrame):
+    """Класс для среднего фрейма, содержащего элементы для выбора филиала и структурного подразделения."""
 
     def __init__(self, master, downframeInstance):
+        """Инициализация среднего фрейма."""
         super().__init__(master)
 
         self.DownFrame = downframeInstance
@@ -136,6 +141,7 @@ class MiddleFrame(customtkinter.CTkFrame):
         CTkToolTip(reload_data_button, message="Для обновления заново выберите нужный филиал и структурное подразделение.")
 
     def load_main_data(self, choice):
+        """Загружает данные основной информации по выбранному филиалу и структурному подразделению."""
         self.DownFrame.clear_frame()
 
         branch_id = db_manager.get_data("branch_office", "id", f"name = '{self.combobox1_branch_office.get()}'")[0][0]
@@ -169,6 +175,7 @@ class MiddleFrame(customtkinter.CTkFrame):
                     self.DownFrame.create_str(tab, data, row)
 
     def reload_all(self):
+        """Обновляет данные в комбо-боксах и нижнем фрейме."""
         try:
             data = db_manager.get_data("branch_office", "name", "")
             data = [str(row[0]) for row in data]
@@ -192,11 +199,13 @@ class MiddleFrame(customtkinter.CTkFrame):
             return 0
 
     def FillComboBox(self, combobox, data_):
+        """Заполняет комбо-бокс данными."""
         data__ = [str(data) for data in data_]
         combobox.configure(values=data__)
         self.update()
 
     def load_data(self, choice):
+        """Загружает данные о структурных подразделениях для выбранного филиала."""
         data = db_manager.exec_procedure("GetStructuralUnits", choice)
         data = [str(row[0]) for row in data]
         self.FillComboBox(self.combobox2_structural_unit, data)
@@ -259,14 +268,14 @@ class MiddleFrame(customtkinter.CTkFrame):
 
 
 class DownFrame(customtkinter.CTkScrollableFrame):
-    """"Класс для нижнего фрейма"""
-
+    """"Класс для нижнего фрейма, содержащего информацию о устройствах."""
     def __init__(self, master):
+        """Инициализация нижнего фрейма."""
         super().__init__(master)
         self.toplevel_window = None
         self.grid_columnconfigure(0, weight=1)
-
     def create_lables(self, tab):
+        """Создание меток для отображения заголовков столбцов."""
         labels_text = ["Ip", "Название", "Название в сети", "Тип устройства", "Место установки", "Мат. отв.", "Описание", "Фото",
                        "Статус", "Последний ремонт", "VNC", "Редактировать"]
         for idx, text in enumerate(labels_text):
@@ -275,7 +284,9 @@ class DownFrame(customtkinter.CTkScrollableFrame):
             label.grid(row=0, column=idx, padx=10, pady=10, sticky="ew")
 
     def create_str(self, tab, data, row):
+        """Создание строки с данными об устройстве."""
         def run_vnc_exe(ip_address):
+            """Запуск VNC"""
             subprocess.run(["resources\\VNC.exe", ip_address])
 
         data_with_id = data
@@ -308,12 +319,12 @@ class DownFrame(customtkinter.CTkScrollableFrame):
         customtkinter.CTkLabel(master=tab, text=data[8], font=("Arial", 12)).grid(row=row + 2, column=9, padx=10, pady=10)
 
     def clear_frame(self):
+        """Удаление всех виджетов из фрейма."""
         # Уничтожаем все дочерние виджеты фрейма
         for widget in self.winfo_children():
             widget.destroy()
 
     def edit_pc(self, bas):
-
         """Метод для открытия окна редактирования устройства"""
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.toplevel_window = EditDevice_(self, basic_id=bas)
