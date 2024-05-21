@@ -32,11 +32,37 @@ db_manager.create_tables()
 
 
 class Reports(customtkinter.CTkToplevel):
+    """
+        Класс для создания окна формирования отчетов.
+
+        Attributes:
+            frame (customtkinter.CTkScrollableFrame): Прокручиваемый фрейм для размещения виджетов.
+            first (FirstFrameChoise): Экземпляр фрейма для выбора параметров отчетов.
+            second (FirstFrameReport): Экземпляр фрейма для отчета по статусам работы.
+            third (SecondFrameReport): Экземпляр фрейма для отчета по ремонтам за промежуток дат.
+            fourth (ThirdFrameReport): Экземпляр фрейма для отчета на выбранное устройство.
+            fifth (FourthFrameReport): Экземпляр фрейма для отчета по месту установки.
+            sixth (FifthFrameReport): Экземпляр фрейма для отчета по всем устройствам филиала.
+            seventh (SixthFrameReport): Экземпляр фрейма для отчета по всем устройствам по структурному подразделению.
+
+        Methods:
+            create_widgets: Создает и размещает виджеты в окне.
+        """
     def __init__(self, *args, **kwargs):
+        """
+                Инициализирует объект Reports.
+
+                Args:
+                    *args: Дополнительные аргументы.
+                    **kwargs: Дополнительные именованные аргументы.
+                """
         super().__init__(*args, **kwargs)
         self.create_widgets()
 
     def create_widgets(self):
+        """
+                Создает и размещает виджеты в окне формирования отчетов.
+                """
         self.title("Формирование отчетов")
         self.geometry("1190x650")
         self.minsize(1190, 650)
@@ -72,7 +98,25 @@ class Reports(customtkinter.CTkToplevel):
 
 
 class FirstFrameChoise(customtkinter.CTkFrame):
+    """
+            Класс для создания фрейма выбора филиала и структурного подразделения.
+
+            Attributes:
+                combobox1_branch_office (customtkinter.CTkComboBox): Комбобокс для выбора филиала.
+                combobox2_structural_unit (customtkinter.CTkComboBox): Комбобокс для выбора структурного подразделения.
+
+            Methods:
+                load_data: Загружает данные для структурного подразделения на основе выбранного филиала.
+                FillComboBox: Заполняет комбобокс данными.
+            """
     def __init__(self, *args, **kwargs):
+        """
+                        Инициализирует объект FirstFrameChoise.
+
+                        Args:
+                            *args: Дополнительные аргументы.
+                            **kwargs: Дополнительные именованные аргументы.
+                        """
         super().__init__(*args, **kwargs)
 
         self.configure(border_color="dodgerblue", border_width=3)
@@ -94,18 +138,49 @@ class FirstFrameChoise(customtkinter.CTkFrame):
         CTkToolTip(self.combobox2_structural_unit, message="Выберите структурное подразделение.")
 
     def load_data(self, choice):
+        """
+                Загружает данные для структурного подразделения на основе выбранного филиала.
+
+                Args:
+                    choice (str): Выбранный филиал.
+                """
         data = db_manager.exec_procedure("GetStructuralUnits", choice)
         data = [str(row[0]) for row in data]
         self.FillComboBox(self.combobox2_structural_unit, data)
 
     def FillComboBox(self, combobox, data_):
+        """
+                Заполняет комбобокс данными.
+
+                Args:
+                    combobox (customtkinter.CTkComboBox): Комбобокс, который нужно заполнить.
+                    data_ (list): Список данных для заполнения.
+                """
         data__ = [str(data) for data in data_]
         combobox.configure(values=data__)
         self.update()
 
 
 class FirstFrameReport(customtkinter.CTkFrame):
+    """
+        Класс для создания фрейма формирования отчета по статусам работы.
+
+        Attributes:
+            first_frame_choise (FirstFrameChoise): Экземпляр класса FirstFrameChoise для доступа к выбранным данным.
+
+        Methods:
+            compare_dates: Сравнивает две даты на предмет их порядка.
+            make_report: Формирует отчет по статусам работы на основе выбранных параметров.
+            make_document: Создает документ с отчетом по статусам работы на основе полученных данных.
+        """
     def __init__(self, master, first_frame_ch_instance):
+        """
+                Инициализирует объект FirstFrameReport.
+
+                Args:
+                    master: Родительский виджет.
+                    first_frame_ch_instance (FirstFrameChoise): Экземпляр класса FirstFrameChoise.
+                """
         super().__init__(master)
         self.first_frame_choise = first_frame_ch_instance
         self.configure(border_color="dodgerblue", border_width=3)
@@ -126,9 +201,20 @@ class FirstFrameReport(customtkinter.CTkFrame):
         self.MakeReport1Button.grid(row=4, column=0, columnspan=2, pady=10, padx=10, sticky="ew")
 
     def compare_dates(self, date1_str, date2_str):
+        """
+                Сравнивает две даты на предмет их порядка.
+
+                Args:
+                    date1_str (str): Первая дата в формате "гггг-мм-дд".
+                    date2_str (str): Вторая дата в формате "гггг-мм-дд".
+
+                Returns:
+                    bool: True, если первая дата меньше или равна второй, иначе False.
+                """
         return datetime.strptime(date1_str, "%Y-%m-%d") <= datetime.strptime(date2_str, "%Y-%m-%d")
 
     def make_report(self):
+        """Формирует отчет по статусам работы на основе выбранных параметров."""
         branch_office = self.first_frame_choise.combobox1_branch_office.get()
         structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
 
@@ -170,6 +256,7 @@ class FirstFrameReport(customtkinter.CTkFrame):
             CTkMessagebox(title="Ошибка", message="Дата начала позже даты окончания.", icon="warning")
 
     def make_document(self):
+        """Создает документ с отчетом по статусам работы на основе полученных данных."""
         date_start_str = self.date_Start.get_current_date()
         date_end_str = self.date_End.get_current_date()
         date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
@@ -230,7 +317,27 @@ class FirstFrameReport(customtkinter.CTkFrame):
 
 
 class SecondFrameReport(customtkinter.CTkFrame):
+    """
+        Класс для создания фрейма формирования отчета по ремонтам.
+
+        Attributes:
+            first_frame_choise (FirstFrameChoise): Экземпляр класса FirstFrameChoise для доступа к выбранным данным.
+            second_frame_instance: Экземпляр класса SecondFrame.
+
+        Methods:
+            compare_dates: Сравнивает две даты на предмет их порядка.
+            make_report: Формирует отчет по ремонтам на основе выбранных параметров.
+            make_document: Создает документ с отчетом по ремонтам на основе полученных данных.
+        """
     def __init__(self, master, first_frame_ch_instance, second_instance):
+        """
+                Инициализирует объект SecondFrameReport.
+
+                Args:
+                    master: Родительский виджет.
+                    first_frame_ch_instance (FirstFrameChoise): Экземпляр класса FirstFrameChoise.
+                    second_instance: Экземпляр класса SecondFrame.
+                """
         super().__init__(master)
         self.first_frame_choise = first_frame_ch_instance
         self.second_frame_instance = second_instance
@@ -252,6 +359,16 @@ class SecondFrameReport(customtkinter.CTkFrame):
         self.MakeReport1Button.grid(row=4, column=0, columnspan=2, pady=10, padx=10, sticky="ew")
 
     def make_report(self):
+        """
+                Сравнивает две даты на предмет их порядка.
+
+                Args:
+                    date1_str (str): Первая дата в формате "гггг-мм-дд".
+                    date2_str (str): Вторая дата в формате "гггг-мм-дд".
+
+                Returns:
+                    bool: True, если первая дата меньше или равна второй, иначе False.
+                """
         branch_office = self.first_frame_choise.combobox1_branch_office.get()
         structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
 
@@ -293,6 +410,7 @@ class SecondFrameReport(customtkinter.CTkFrame):
             CTkMessagebox(title="Ошибка", message="Дата начала позже даты окончания.", icon="warning")
 
     def make_document(self):
+        """Формирует отчет по ремонтам на основе выбранных параметров."""
         date_start_str = self.date_Start.get_current_date()
         date_end_str = self.date_End.get_current_date()
         date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
@@ -339,7 +457,27 @@ class SecondFrameReport(customtkinter.CTkFrame):
 
 
 class ThirdFrameReport(customtkinter.CTkFrame):
+    """
+        Класс для создания фрейма формирования отчета по выбранному устройству.
+
+        Attributes:
+            first_frame_choise (FirstFrameChoise): Экземпляр класса FirstFrameChoise для доступа к выбранным данным.
+            second_frame_instance: Экземпляр класса SecondFrame.
+
+        Methods:
+            load_devices_types: Загружает типы устройств на основе выбранных данных.
+            load_devices: Загружает устройства выбранного типа на основе выбранных данных.
+            make_report: Формирует отчет по выбранному устройству.
+        """
     def __init__(self, master, first_frame_ch_instance, second_instance):
+        """
+                Инициализирует объект ThirdFrameReport.
+
+                Args:
+                    master: Родительский виджет.
+                    first_frame_ch_instance (FirstFrameChoise): Экземпляр класса FirstFrameChoise.
+                    second_instance: Экземпляр класса SecondFrame.
+                """
         super().__init__(master)
         self.first_frame_choise = first_frame_ch_instance
         self.second_frame_instance = second_instance
@@ -368,6 +506,7 @@ class ThirdFrameReport(customtkinter.CTkFrame):
             row=4, column=0, padx=10, pady=10, sticky="ew", columnspan=3)
 
     def load_devices_types(self):
+        """Загружает типы устройств на основе выбранных данных."""
         branch_office = self.first_frame_choise.combobox1_branch_office.get()
         structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
         # Check if either combobox is empty
@@ -389,6 +528,7 @@ class ThirdFrameReport(customtkinter.CTkFrame):
             CTkMessagebox(title="Ошибка", message=f"Ошибка на этапе загрузки типов устройств!\n {e}", icon="warning")
 
     def load_devices(self, choice):
+        """Загружает устройства выбранного типа на основе выбранных данных."""
         print(choice)
         branch_office = self.first_frame_choise.combobox1_branch_office.get()
         structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
@@ -409,6 +549,7 @@ class ThirdFrameReport(customtkinter.CTkFrame):
         self.update()
 
     def make_report(self):
+        """Формирует документ отчета по выбранному устройству."""
         branch_office = self.first_frame_choise.combobox1_branch_office.get()
         structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
         type_of_device = self.type_of_device_combob.get()
@@ -486,7 +627,23 @@ class ThirdFrameReport(customtkinter.CTkFrame):
 
 
 class FourthFrameReport(customtkinter.CTkFrame):
+    """Класс для создания фрейма формирования отчета по месту установки.
+
+        Attributes:
+            first_frame_choise (FirstFrameChoise): Экземпляр класса FirstFrameChoise для доступа к выбранным данным.
+
+        Methods:
+            load_locations: Загружает доступные места установки на основе выбранных данных.
+            make_report: Формирует отчет по выбранному месту установки.
+        """
     def __init__(self, master, first_frame_ch_instance):
+        """
+                Инициализирует объект FourthFrameReport.
+
+                Args:
+                    master: Родительский виджет.
+                    first_frame_ch_instance (FirstFrameChoise): Экземпляр класса FirstFrameChoise.
+                """
         super().__init__(master)
         self.first_frame_choise = first_frame_ch_instance
         self.grid_rowconfigure((1, 2, 3, 4), weight=1)
@@ -508,6 +665,7 @@ class FourthFrameReport(customtkinter.CTkFrame):
             row=3, column=0, padx=10, pady=10, sticky="ew", columnspan=3)
 
     def load_locations(self):
+        """Загружает доступные места установки на основе выбранных данных."""
         branch_office = self.first_frame_choise.combobox1_branch_office.get()
         structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
         if not branch_office.strip():
@@ -528,6 +686,7 @@ class FourthFrameReport(customtkinter.CTkFrame):
             CTkMessagebox(title="Ошибка", message=f"Ошибка на этапе загрузки типов устройств!\n {e}", icon="warning")
 
     def make_report(self):
+        """Формирует отчет по выбранному месту установки."""
         branch_office = self.first_frame_choise.combobox1_branch_office.get()
         structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
         place_of_install = self.place_of_install_combob.get()
@@ -624,7 +783,21 @@ class FourthFrameReport(customtkinter.CTkFrame):
             CTkMessagebox(title="Ошибка", message=f"Ошибка на этапе формирования отчета!\n {e}", icon="warning")
 
 class FifthFrameReport(customtkinter.CTkFrame):
+        """Класс для создания фрейма формирования отчета по устройствам филиала.
+
+        Attributes:
+            first_frame_choise (FirstFrameChoise): Экземпляр класса FirstFrameChoise для доступа к выбранным данным.
+
+        Methods:
+            make_report: Формирует отчет по устройствам выбранного филиала.
+        """
         def __init__(self, master, first_frame_ch_instance):
+            """Инициализирует объект FifthFrameReport.
+
+                    Args:
+                        master: Родительский виджет.
+                        first_frame_ch_instance (FirstFrameChoise): Экземпляр класса FirstFrameChoise.
+                    """
             super().__init__(master)
             self.first_frame_choise = first_frame_ch_instance
             self.grid_rowconfigure((1, 2, 3, 4), weight=1)
@@ -636,6 +809,7 @@ class FifthFrameReport(customtkinter.CTkFrame):
                                     command=lambda: self.make_report()).grid(
                 row=1, column=0, padx=10, pady=10, sticky="ew", columnspan=3)
         def make_report(self):
+            """Формирует отчет по устройствам выбранного филиала."""
             branch_office = self.first_frame_choise.combobox1_branch_office.get()
 
             if not branch_office.strip():
@@ -724,7 +898,21 @@ class FifthFrameReport(customtkinter.CTkFrame):
 
 
 class SixthFrameReport(customtkinter.CTkFrame):
+        """Класс для создания фрейма формирования отчета по устройствам структурного подразделения.
+
+        Attributes:
+            first_frame_choise (FirstFrameChoise): Экземпляр класса FirstFrameChoise для доступа к выбранным данным.
+
+        Methods:
+            make_report: Формирует отчет по устройствам выбранного структурного подразделения.
+        """
         def __init__(self, master, first_frame_ch_instance):
+            """Инициализирует объект SixthFrameReport.
+
+                    Args:
+                        master: Родительский виджет.
+                        first_frame_ch_instance (FirstFrameChoise): Экземпляр класса FirstFrameChoise.
+                    """
             super().__init__(master)
             self.first_frame_choise = first_frame_ch_instance
             self.grid_rowconfigure((1, 2, 3, 4), weight=1)
@@ -737,6 +925,7 @@ class SixthFrameReport(customtkinter.CTkFrame):
                 row=1, column=0, padx=10, pady=10, sticky="ew", columnspan=3)
 
         def make_report(self):
+            """Формирует отчет по устройствам выбранного структурного подразделения."""
             branch_office = self.first_frame_choise.combobox1_branch_office.get()
             structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
 
