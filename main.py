@@ -369,6 +369,7 @@ class App(customtkinter.CTk):
 
         self.title("ddAdmin")
         self.geometry(f"{App.WIDTH}x{App.HEIGHT}")
+        self.minsize(1300,300)
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
 

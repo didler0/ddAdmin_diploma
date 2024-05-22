@@ -1,3 +1,5 @@
+import re
+
 import customtkinter
 import tkinter
 from dataBase import DatabaseManager
@@ -45,7 +47,8 @@ class AddDevice_(customtkinter.CTkToplevel):
         """
         self.title("Добавление устройства")
         self.geometry("600x595")
-
+        self.minsize(600,600)
+        self.maxsize(600,600)
         # Метки для базовой информации
         labels_basic = ["IP Адрес *", "Название *", "Сетевое имя *", "Тип устройства *", "Место установки *", "Описание *",
                         "Материально ответственный *", "Филиал *", "Структурное подразделение *"]
@@ -206,6 +209,7 @@ class AddDevice_(customtkinter.CTkToplevel):
 
         return values_component
 
+
     def get_data_from_details(self):
         """
         Получение данных из раздела деталей.
@@ -223,9 +227,7 @@ class AddDevice_(customtkinter.CTkToplevel):
             else:
                 value = None
             values_detail.append(value)
-
         return values_detail
-
     def get_data_from_basic(self):
         """
         Получение данных из раздела базовой информации.
@@ -286,6 +288,52 @@ class AddDevice_(customtkinter.CTkToplevel):
         self.clear_data_from_section(self.widgetsBasic)
         self.clear_data_from_section(self.widgetsDetail)
         self.clear_data_from_section(self.widgetsComponents)
+    def validate_detail_data(self,values_details):
+        mac_regex = re.compile(r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$')
+
+        # Проверка значения по индексу 2 на MAC-адрес
+        if values_details[2] is not None and not mac_regex.match(values_details[2]):
+            raise ValueError("Неверный формат MAC-адреса!\n Пример: 00:1A:2B:3C:4D:5E или 00-1A-2B-3C-4D-5E")
+
+        # Проверка значения по индексу 4 на целое число (Год покупки)
+        if values_details[4] is not None:
+            try:
+                values_details[4] = int(values_details[4])
+            except ValueError:
+                raise ValueError("Год покупки должен быть целым числом!.")
+
+        # Проверка значения по индексу 5 на целое число (Месяцы гарантии)
+        if values_details[5] is not None:
+            try:
+                values_details[5] = int(values_details[5])
+            except ValueError:
+                raise ValueError("Месяцы гарантии должны быть целым числом!")
+
+    def validate_basic_data(self,values_basic):
+        ip_pattern = re.compile(r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
+        first_element = values_basic[0]
+        # Проверяем, является ли первый элемент IP-адресом
+        if not ip_pattern.match(first_element):
+            raise ValueError(f"IP - '{first_element}' не является допустимым IP-адресом\n Пример: 192.168.100.111")
+
+        # Проверяем, что список не пустой
+        if not values_basic or all(element is None for element in values_basic):
+            raise ValueError("Вы не заполнили необходимые поля!")
+
+        third_element = values_basic[3]
+        fourth_element = values_basic[4]
+        sixth_element = values_basic[6]
+        if not db_manager.get_data("type_of_device","*",f"name = '{third_element}'"):
+            raise ValueError("Выбрано значение, отсутствующее в базе данных! Нажмите кнопку \"Применить\" Возле поля выбора типа устройства.")
+        if not db_manager.get_data("place_of_installation", "*", f"name = '{fourth_element}'"):
+            raise ValueError(
+                "Выбрано значение, отсутствующее в базе данных! Нажмите кнопку \"Применить\" Возле поля выбора места установки.")
+        if not db_manager.get_data("material_resp_person", "*", f"name = '{sixth_element}'"):
+            raise ValueError(
+                "Выбрано значение, отсутствующее в базе данных! Нажмите кнопку \"Применить\" Возле поля выбора материально ответственного.")
+
+
+
 
     def add_whole_data_to_bd(self):
         """
@@ -297,6 +345,8 @@ class AddDevice_(customtkinter.CTkToplevel):
             values_details = self.get_data_from_details()
             values_basic = self.get_data_from_basic()
 
+            self.validate_basic_data(values_basic)
+            self.validate_detail_data(values_details)
             # Проверка наличия всех необходимых данных
             if not all(values_details) or not all(values_basic):
                 raise ValueError("Не все необходимые поля заполнены")
@@ -317,7 +367,7 @@ class AddDevice_(customtkinter.CTkToplevel):
                 if id_result:
                     values[index] = id_result[0][0]  # Обновляем значение на id из таблицы
                 else:
-                    raise ValueError(f"Не удалось найти id для {table} с именем '{value}'")
+                    raise ValueError(f"Вы не применили изменения в следующих полях:Тип устройства, место установки, материально ответственный.\n")
 
             last_component_id = db_manager.get_last_id("component")
             values_details.insert(0, last_component_id)
@@ -337,12 +387,12 @@ class AddDevice_(customtkinter.CTkToplevel):
         except ValueError as ve:
             # Отображение окна с сообщением об ошибке в случае незаполненных полей
             CTkMessagebox(title="Ошибка", message=str(ve), icon="cancel")
-            print(f"An error occurred while adding computer: {ve}")
+
 
         except Exception as e:
             # Отображение окна с сообщением об общей ошибке
             CTkMessagebox(title="Ошибка", message="Ошибка при добавлении компьютера: " + str(e), icon="cancel")
-            print(f"An error occurred while adding computer: {e}")
+
 
     def FillComboBox(self, combobox, data_):
         """Заполнение комбобокса данными"""

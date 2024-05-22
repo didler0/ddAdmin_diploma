@@ -275,45 +275,48 @@ class FirstFrameReport(customtkinter.CTkFrame):
 
         if not file_path:
             return  # Прерывание функции, если пользователь не выбрал место сохранения
+        try:
+            doc = Document()
+            title = doc.add_heading(
+                f'Отчет по статусам работы устройств.\n Филиал - {self.first_frame_choise.combobox1_branch_office.get()} \n '
+                f'Структурное подразделение - {self.first_frame_choise.combobox2_structural_unit.get()}', level=1)
+            title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
-        doc = Document()
-        title = doc.add_heading(
-            f'Отчет по статусам работы устройств.\n Филиал - {self.first_frame_choise.combobox1_branch_office.get()} \n '
-            f'Структурное подразделение - {self.first_frame_choise.combobox2_structural_unit.get()}', level=1)
-        title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            # Добавление таблицы с данными
+            table = doc.add_table(rows=1, cols=5)
+            table.style = 'Table Grid'
+            # Заголовки столбцов
+            hdr_cells = table.rows[0].cells
+            hdr_cells[0].text = 'Название'
+            hdr_cells[1].text = 'Сетевое имя'
+            hdr_cells[2].text = 'Статус'
+            hdr_cells[3].text = 'Место установки'
+            hdr_cells[4].text = 'Дата'
 
-        # Добавление таблицы с данными
-        table = doc.add_table(rows=1, cols=5)
-        table.style = 'Table Grid'
-        # Заголовки столбцов
-        hdr_cells = table.rows[0].cells
-        hdr_cells[0].text = 'Название'
-        hdr_cells[1].text = 'Сетевое имя'
-        hdr_cells[2].text = 'Статус'
-        hdr_cells[3].text = 'Место установки'
-        hdr_cells[4].text = 'Дата'
+            # Заполнение таблицы данными
+            for item in data:
+                row_cells = table.add_row().cells
+                row_cells[0].text = item[0]  # Название
+                row_cells[1].text = item[1]  # Сетевое имя
+                row_cells[2].text = "On" if item[2] else "Off"  # Статус
+                row_cells[3].text = item[4]  # Место установки
+                row_cells[4].text = item[3].strftime("%Y-%m-%d %H:%M:%S")
 
-        # Заполнение таблицы данными
-        for item in data:
-            row_cells = table.add_row().cells
-            row_cells[0].text = item[0]  # Название
-            row_cells[1].text = item[1]  # Сетевое имя
-            row_cells[2].text = "On" if item[2] else "Off"  # Статус
-            row_cells[3].text = item[4]  # Место установки
-            row_cells[4].text = str(item[3])
+                # Установка цвета текста в ячейке в зависимости от статуса
+                if item[2]:  # Если статус равен True (1 или "On")
+                    color = RGBColor(0, 128, 0)  # Зеленый цвет
+                else:
+                    color = RGBColor(255, 0, 0)  # Красный цвет
+                for cell in row_cells:
+                    for paragraph in cell.paragraphs:
+                        for run in paragraph.runs:
+                            run.font.color.rgb = color
 
-            # Установка цвета текста в ячейке в зависимости от статуса
-            if item[2]:  # Если статус равен True (1 или "On")
-                color = RGBColor(0, 128, 0)  # Зеленый цвет
-            else:
-                color = RGBColor(255, 0, 0)  # Красный цвет
-            for cell in row_cells:
-                for paragraph in cell.paragraphs:
-                    for run in paragraph.runs:
-                        run.font.color.rgb = color
-
-        # Сохранение документа
-        doc.save(file_path)
+            # Сохранение документа
+            doc.save(file_path)
+            CTkMessagebox(title="Успех", message="Отчет успешно сформирован.", icon="check")
+        except Exception as e:
+            CTkMessagebox(title="Ошибка", message="Ошибка при формировании отчета!", icon="warning")
 
 
 class SecondFrameReport(customtkinter.CTkFrame):
@@ -411,49 +414,54 @@ class SecondFrameReport(customtkinter.CTkFrame):
 
     def make_document(self):
         """Формирует отчет по ремонтам на основе выбранных параметров."""
-        date_start_str = self.date_Start.get_current_date()
-        date_end_str = self.date_End.get_current_date()
-        date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
-        date_end = datetime.strptime(date_end_str, "%Y-%m-%d")
-        data = db_manager.exec_procedure("GetRepairsBetweenTwoDates", date_start, date_end,
-                                         f"{self.first_frame_choise.combobox1_branch_office.get()}",
-                                         f"{self.first_frame_choise.combobox2_structural_unit.get()}")
-        root = tk.Tk()
-        root.withdraw()  # Скрытие корневого окна
-        file_path = filedialog.asksaveasfilename(defaultextension=".docx",
-                                                 filetypes=[("Word Document", "*.docx")],
-                                                 title="Выберите место сохранения документа",
-                                                 initialfile="ОтчетПоРемонтам")
-        if not file_path:
-            return  # Прерывание функции, если пользователь не выбрал место сохранения
-        doc = Document()
-        title = doc.add_heading(
-            f'Отчет по ремонтам устройств.\n Филиал - {self.first_frame_choise.combobox1_branch_office.get()} \n '
-            f'Структурное подразделение - {self.first_frame_choise.combobox2_structural_unit.get()}', level=1)
-        title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        try:
+            date_start_str = self.date_Start.get_current_date()
+            date_end_str = self.date_End.get_current_date()
+            date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
+            date_end = datetime.strptime(date_end_str, "%Y-%m-%d")
+            data = db_manager.exec_procedure("GetRepairsBetweenTwoDates", date_start, date_end,
+                                             f"{self.first_frame_choise.combobox1_branch_office.get()}",
+                                             f"{self.first_frame_choise.combobox2_structural_unit.get()}")
+            root = tk.Tk()
+            root.withdraw()  # Скрытие корневого окна
+            file_path = filedialog.asksaveasfilename(defaultextension=".docx",
+                                                     filetypes=[("Word Document", "*.docx")],
+                                                     title="Выберите место сохранения документа",
+                                                     initialfile="ОтчетПоРемонтам")
+            if not file_path:
+                return  # Прерывание функции, если пользователь не выбрал место сохранения
+            doc = Document()
+            title = doc.add_heading(
+                f'Отчет по ремонтам устройств.\n Филиал - {self.first_frame_choise.combobox1_branch_office.get()} \n '
+                f'Структурное подразделение - {self.first_frame_choise.combobox2_structural_unit.get()}', level=1)
+            title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
-        # Добавление таблицы с данными
-        table = doc.add_table(rows=1, cols=5)
-        table.style = 'Table Grid'
+            # Добавление таблицы с данными
+            table = doc.add_table(rows=1, cols=5)
+            table.style = 'Table Grid'
 
-        # Заголовки столбцов
-        hdr_cells = table.rows[0].cells
-        hdr_cells[0].text = 'Сетевое имя'
-        hdr_cells[1].text = 'IP'
-        hdr_cells[2].text = 'Описание'
-        hdr_cells[3].text = 'Дата ремонта'
-        hdr_cells[4].text = 'Папка с документами'
+            # Заголовки столбцов
+            hdr_cells = table.rows[0].cells
+            hdr_cells[0].text = 'Сетевое имя'
+            hdr_cells[1].text = 'IP'
+            hdr_cells[2].text = 'Описание'
+            hdr_cells[3].text = 'Дата ремонта'
+            hdr_cells[4].text = 'Папка с документами'
 
-        for item in data:
-            row_cells = table.add_row().cells
-            row_cells[0].text = str(item[0])  # Название
-            row_cells[1].text = str(item[1])  # Сетевое имя
-            row_cells[2].text = str(item[2])
-            row_cells[3].text = str(item[3])  # Место установки
-            row_cells[4].text = str(item[4])
+            for item in data:
+                row_cells = table.add_row().cells
+                row_cells[0].text = str(item[0])  # Название
+                row_cells[1].text = str(item[1])  # Сетевое имя
+                row_cells[2].text = str(item[2])
+                row_cells[3].text = str(item[3])  # Место установки
+                row_cells[4].text = str(item[4])
 
-        # Сохранение документа
-        doc.save(file_path)
+            # Сохранение документа
+            doc.save(file_path)
+            CTkMessagebox(title="Успех", message="Отчет успешно сформирован.", icon="check")
+        except Exception as e:
+            CTkMessagebox(title="Ошибка", message="Ошибка при формировании отчета!", icon="warning")
+
 
 
 class ThirdFrameReport(customtkinter.CTkFrame):

@@ -63,7 +63,7 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
 
         self.branch_office_combob = CTkAddDelCombobox.ComboBoxWithButtons(table="branch_office", master=self.frame_, values=data,
                                                                           command_=lambda choice: self.callback_(choice))
-        self.branch_office_combob.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        self.branch_office_combob.grid(row=0, column=1, padx=10, pady=10, sticky="nsew",columnspan=4)
 
         # Кнопка для добавления данных
         add_new_structural_units_to_branch_button = customtkinter.CTkButton(master=self, text="Закрепить внесенные структурные подразделения за филиалом",

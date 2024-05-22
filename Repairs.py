@@ -51,8 +51,9 @@ class Repair(customtkinter.CTkToplevel):
         Создает и настраивает окно Ремонтов.
         """
         self.title("Ремонты")
-        self.geometry("600x750")
-        self.minsize(600, 750)
+        self.geometry("600x650")
+        self.minsize(600, 650)
+        self.maxsize(600,650)
 
         self.frame = customtkinter.CTkFrame(self, height=490)
         self.frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
@@ -481,31 +482,34 @@ class ThirdFrame(customtkinter.CTkFrame):
             print(f"An error occurred: {e}")
 
     def delete_repair(self):
-        """
-                Удаляет выбранный ремонт из базы данных и соответствующую папку на диске.
-                """
-        try:
-            choice = self.secondFrameInstance.combobox1_repair.get()
-            # Проверяем, не является ли choice пустым
-            if not choice:
-                CTkMessagebox(title="Предупреждение", message="Выберите ремонт для удаления.", icon="warning")
-                return
-
-            parts = choice.split('|')
-            choice = [part.strip() for part in parts]
-            repair_folder_path = db_manager.get_data("repair","document_path",f"id = {choice[0]}")[0][0]
-            # Проверяем существование папки ремонта перед её удалением
-            if os.path.exists(repair_folder_path):
-                # Удаляем папку ремонта
-                shutil.rmtree(repair_folder_path)
-            db_manager.delete_data("repair", f"id = {choice[0]}")
-            # Выводим сообщение об успешном удалении ремонта
-            CTkMessagebox(title="Успех", message="Ремонт успешно удален!", icon="check", option_1="Ok")
-        except Exception as e:
-            # Выводим сообщение об ошибке с использованием CTkMessagebox
-            CTkMessagebox(title="Ошибка", message="Произошла ошибка при удалении ремонта.", icon="cancel")
-            print(f"An error occurred: {e}")
-
+        choice = self.secondFrameInstance.combobox1_repair.get()
+        # Проверяем, не является ли choice пустым
+        if not choice:
+            CTkMessagebox(title="Предупреждение", message="Выберите ремонт для удаления.", icon="warning")
+            return
+        """Удаляет выбранный ремонт из базы данных и соответствующую папку на диске."""
+        response = CTkMessagebox(title="Подтверждение удаления",
+                                 message=f"Вы действительно хотите удалить выбранный ремонт?'?",
+                                 icon="warning",
+                                 option_1="Да",
+                                 option_2="Нет").get()
+        if response == "Да":
+            try:
+                parts = choice.split('|')
+                choice = [part.strip() for part in parts]
+                repair_folder_path = db_manager.get_data("repair", "document_path", f"id = {choice[0]}")[0][0]
+                # Проверяем существование папки ремонта перед её удалением
+                if os.path.exists(repair_folder_path):
+                    # Удаляем папку ремонта
+                    shutil.rmtree(repair_folder_path)
+                db_manager.delete_data("repair", f"id = {choice[0]}")
+                # Выводим сообщение об успешном удалении ремонта
+                CTkMessagebox(title="Успех", message="Ремонт успешно удален!", icon="check", option_1="Ok")
+            except Exception as e:
+                # Выводим сообщение об ошибке с использованием CTkMessagebox
+                CTkMessagebox(title="Ошибка", message="Произошла ошибка при удалении ремонта.", icon="cancel")
+        else:
+            pass
     def create_repair_folder(self, name):
         """
                 Создает папку для нового ремонта.
