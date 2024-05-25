@@ -3,7 +3,7 @@ import tkinter
 from dataBase import DatabaseManager
 from CTkMessagebox import CTkMessagebox
 import CTkAddDelCombobox
-
+import re
 with open('database_info.txt', 'r') as file:
     db_info = file.read().strip()
 db_info_parts = db_info.split(', ')
@@ -92,11 +92,27 @@ class EditDevice_(customtkinter.CTkToplevel):
         """
         Обновление всех данных в базе данных.
         """
+        try:
+            # Получение данных
+            values_component = self.get_data_from_components()
+            values_details = self.get_data_from_details()
+            values_basic = self.get_data_from_basic()
 
-        # Получение данных
-        values_component = self.get_data_from_components()
-        values_details = self.get_data_from_details()
-        values_basic = self.get_data_from_basic()
+            self.validate_basic_data(values_basic)
+            self.validate_detail_data(values_details)
+            if not self.validate_values(values_details) or not self.validate_values(values_basic):
+                raise ValueError("Не все необходимые поля заполнены")
+
+        except ValueError as ve:
+            # Отображение окна с сообщением об ошибке в случае незаполненных полей
+            CTkMessagebox(title="Ошибка", message=str(ve), icon="cancel")
+            return 0
+
+
+        except Exception as e:
+            # Отображение окна с сообщением об общей ошибке
+            CTkMessagebox(title="Ошибка", message="Ошибка при обновлении данныз устройства: " + str(e), icon="cancel")
+            return 0
 
         # Список кортежей, где каждый кортеж представляет столбец, который нужно обновить, и соответствующую таблицу
         columns_to_update = [
@@ -468,3 +484,54 @@ class EditDevice_(customtkinter.CTkToplevel):
 
         return values_basic
 
+    def validate_detail_data(self,values_details):
+        print(values_details)
+        mac_regex = re.compile(r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$')
+
+        # Проверка значения по индексу 2 на MAC-адрес
+        if values_details[2] is not None and not mac_regex.match(values_details[2]):
+            raise ValueError("Неверный формат MAC-адреса!\n Пример: 00:1A:2B:3C:4D:5E или 00-1A-2B-3C-4D-5E")
+
+        # Проверка значения по индексу 4 на целое число (Год покупки)
+        if values_details[4] is not None:
+            try:
+                values_details[4] = int(values_details[4])
+            except ValueError:
+                raise ValueError("Год покупки должен быть целым числом!.")
+
+        # Проверка значения по индексу 5 на целое число (Месяцы гарантии)
+        if values_details[5] is not None:
+            try:
+                values_details[5] = int(values_details[5])
+            except ValueError:
+                raise ValueError("Месяцы гарантии должны быть целым числом!")
+
+    def validate_basic_data(self,values_basic):
+        print(values_basic)
+        ip_pattern = re.compile(r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
+        first_element = values_basic[0]
+        # Проверяем, является ли первый элемент IP-адресом
+        if not ip_pattern.match(first_element):
+            raise ValueError(f"IP - '{first_element}' не является допустимым IP-адресом\n Пример: 192.168.100.111")
+
+        # Проверяем, что список не пустой
+        if not values_basic or all(element is None for element in values_basic):
+            raise ValueError("Вы не заполнили необходимые поля!")
+
+        third_element = values_basic[3]
+        fourth_element = values_basic[4]
+        sixth_element = values_basic[6]
+        if not db_manager.get_data("type_of_device","*",f"name = '{third_element}'"):
+            raise ValueError("Выбрано значение, отсутствующее в базе данных! Нажмите кнопку \"Применить\" Возле поля выбора типа устройства.")
+        if not db_manager.get_data("place_of_installation", "*", f"name = '{fourth_element}'"):
+            raise ValueError(
+                "Выбрано значение, отсутствующее в базе данных! Нажмите кнопку \"Применить\" Возле поля выбора места установки.")
+        if not db_manager.get_data("material_resp_person", "*", f"name = '{sixth_element}'"):
+            raise ValueError(
+                "Выбрано значение, отсутствующее в базе данных! Нажмите кнопку \"Применить\" Возле поля выбора материально ответственного.")
+
+    def validate_values(self,values):
+        for value in values:
+            if value in [None, '']:
+                return False
+        return True

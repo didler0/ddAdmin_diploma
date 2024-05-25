@@ -291,6 +291,7 @@ class AddDevice_(customtkinter.CTkToplevel):
         self.clear_data_from_section(self.widgetsDetail)
         self.clear_data_from_section(self.widgetsComponents)
     def validate_detail_data(self,values_details):
+        print(values_details)
         mac_regex = re.compile(r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$')
 
         # Проверка значения по индексу 2 на MAC-адрес
@@ -312,6 +313,7 @@ class AddDevice_(customtkinter.CTkToplevel):
                 raise ValueError("Месяцы гарантии должны быть целым числом!")
 
     def validate_basic_data(self,values_basic):
+        print(values_basic)
         ip_pattern = re.compile(r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
         first_element = values_basic[0]
         # Проверяем, является ли первый элемент IP-адресом
@@ -334,8 +336,11 @@ class AddDevice_(customtkinter.CTkToplevel):
             raise ValueError(
                 "Выбрано значение, отсутствующее в базе данных! Нажмите кнопку \"Применить\" Возле поля выбора материально ответственного.")
 
-
-
+    def validate_values(self,values):
+        for value in values:
+            if value in [None, '']:
+                return False
+        return True
 
     def add_whole_data_to_bd(self):
         """
@@ -350,7 +355,9 @@ class AddDevice_(customtkinter.CTkToplevel):
             self.validate_basic_data(values_basic)
             self.validate_detail_data(values_details)
             # Проверка наличия всех необходимых данных
-            if not all(values_details) or not all(values_basic):
+            print(values_details)
+            print(values_basic)
+            if not self.validate_values(values_details) or not self.validate_values(values_basic):
                 raise ValueError("Не все необходимые поля заполнены")
 
             # Список кортежей, где каждый кортеж представляет столбец, который нужно обновить, и соответствующую таблицу
