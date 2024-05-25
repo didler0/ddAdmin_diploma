@@ -48,7 +48,7 @@ class AddDevice_(customtkinter.CTkToplevel):
         self.title("Добавление устройства")
         self.geometry("600x595")
         self.minsize(600,600)
-        self.maxsize(600,600)
+
         # Метки для базовой информации
         labels_basic = ["IP Адрес *", "Название *", "Сетевое имя *", "Тип устройства *", "Место установки *", "Описание *",
                         "Материально ответственный *", "Филиал *", "Структурное подразделение *"]
@@ -64,11 +64,13 @@ class AddDevice_(customtkinter.CTkToplevel):
         self.widgetsComponents = []
 
         self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
         self.frame = customtkinter.CTkScrollableFrame(self, height=520)
         self.frame.grid(row=0, column=0, padx=10, pady=10, sticky='nsew',columnspan=2)
-
+        self.frame.grid_rowconfigure((0,1),weight=1)
+        self.frame.grid_columnconfigure(0,weight=1)
         self.tabview = customtkinter.CTkTabview(master=self.frame, height=515, width=550)
-        self.tabview.pack()
+        self.tabview.grid(row=1, column=0, padx=10, pady=10, sticky='nsew',columnspan=2)
 
         # Добавление вкладок для разных секций информации
         self.tabview.add("Базовая информация")
