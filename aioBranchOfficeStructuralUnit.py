@@ -4,11 +4,6 @@ from dataBase import DatabaseManager
 from CTkMessagebox import CTkMessagebox
 import CTkAddDelCombobox
 
-# Инициализация менеджера базы данных
-with open('database_info.txt', 'r') as file:
-    db_info = file.read().strip()
-db_info_parts = db_info.split(', ')
-db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
 
 
 class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
@@ -22,7 +17,7 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
         widgetsComponents: Список виджетов для информации о компонентах.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args,db_manager=None, **kwargs):
         """
         Инициализация окна добавления компьютера.
 
@@ -31,11 +26,10 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
             kwargs: Именованные аргументы.
         """
         super().__init__(*args, **kwargs)
-
+        self.db_manager = db_manager
         self.branch_office_combob = CTkAddDelCombobox.ComboBoxWithButtons
         self.list_widgets = []
         self.list_widgets_only_entry = []
-
         self.frame_ = None
         self.frame_for_entry = None  # Added to store the frame for entry widgets
         self.create_window()
@@ -54,17 +48,14 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
         self.frame_.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.frame_.grid_columnconfigure(0, weight=0)
         self.frame_.grid_columnconfigure(1, weight=1)
-
-        data = db_manager.get_data("branch_office", '*')
+        data = self.db_manager.get_data("branch_office", '*')
         #преобразование кортежа списков в список
         data = [str(row[1]) for row in data]
         label = customtkinter.CTkLabel(master=self.frame_, text="Выберите филиал", font=("Arial", 12))
         label.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
-
         self.branch_office_combob = CTkAddDelCombobox.ComboBoxWithButtons(table="branch_office", master=self.frame_, values=data,
-                                                                          command_=lambda choice: self.callback_(choice))
+                                                                       command_=lambda choice: self.callback_(choice),db_manager=self.db_manager)
         self.branch_office_combob.grid(row=0, column=1, padx=10, pady=10, sticky="nsew",columnspan=4)
-
         # Кнопка для добавления данных
         add_new_structural_units_to_branch_button = customtkinter.CTkButton(master=self, text="Закрепить внесенные структурные подразделения за филиалом",
                                                                             command=lambda: self.add_new_structural_units_to_branch())
@@ -75,41 +66,35 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
         try:
             list_of_str_units = []
             branch_office = self.branch_office_combob.get_current_value()
-
             # Получение списка введенных структурных подразделений
             for widget in self.list_widgets_only_entry:
                 if isinstance(widget, customtkinter.CTkEntry) and widget.get() != '':
                     list_of_str_units.append(widget.get())
-            print(branch_office)
-            print(list_of_str_units)
-
             try:
                 # Получение идентификатора филиала
-                id_branch = db_manager.get_data("branch_office", "id", f"name = '{branch_office}'")[0][0]
+                id_branch = self.db_manager.get_data("branch_office", "id", f"name = '{branch_office}'")[0][0]
                 print(id_branch)
             except IndexError:
                 CTkMessagebox(title="Ошибка", message="Выбранный филиал не найден в базе данных.", icon="cancel")
                 return
-
             # Проверка и добавление отсутствующих структурных подразделений
             try:
                 for text in list_of_str_units:
                     # Проверяем, существует ли структурное подразделение в базе данных
-                    if not db_manager.check_structural_unit_exists(text):
+                    if not self.db_manager.check_structural_unit_exists(text):
                         # Если структурное подразделение отсутствует, добавляем его
-                        db_manager.insert_data("structural_unit", "name", f"'{text}'")
+                        self.db_manager.insert_data("structural_unit", "name", f"'{text}'")
             except Exception as e:
                 CTkMessagebox(title="Ошибка", message=f"Ошибка при добавлении структурного подразделения: {str(e)}", icon="cancel")
                 return
-
             # Получение идентификаторов структурных подразделений и их добавление к филиалу
             try:
                 for text in list_of_str_units:
                     # Проверяем, привязано ли структурное подразделение к филиалу
-                    if not db_manager.check_structural_unit_assigned_to_branch(text, branch_office):
+                    if not self.db_manager.check_structural_unit_assigned_to_branch(text, branch_office):
                         # Если структурное подразделение не привязано к филиалу, добавляем его привязку
-                        structural_unit_id = db_manager.get_data("structural_unit", "id", f"name = '{text}'")[0][0]
-                        db_manager.insert_data("branch_structural_unit", "branch_office_id, structural_unit_id", f"'{id_branch}', '{structural_unit_id}'")
+                        structural_unit_id = self.db_manager.get_data("structural_unit", "id", f"name = '{text}'")[0][0]
+                        self.db_manager.insert_data("branch_structural_unit", "branch_office_id, structural_unit_id", f"'{id_branch}', '{structural_unit_id}'")
 
                 CTkMessagebox(title="Успех", message="Структурные подразделения успешно привязаны к филиалу!", icon="check", option_1="Ok")
 
@@ -119,13 +104,10 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
         except Exception as e:
             CTkMessagebox(title="Ошибка", message=f"Ошибка! + {str(e)}", icon="cancel")
             return
-
     def callback_(self, choice):
         """Метод для обработки события выбора в комбобоксе."""
-        assigned_structural_units = db_manager.exec_procedure("GetStructuralUnits", choice)
+        assigned_structural_units = self.db_manager.exec_procedure("GetStructuralUnits", choice)
         assigned_structural_units = [item[0] for item in assigned_structural_units]
-
-
         # Удаление всех виджетов с формы
         for widget in self.list_widgets:
             widget.destroy()
@@ -133,7 +115,6 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
             widget.destroy()
         self.list_widgets = []
         self.list_widgets_only_entry = []
-
         if assigned_structural_units:
             # Добавление виджетов для каждого структурного подразделения
             for i, text in enumerate(assigned_structural_units):
@@ -145,22 +126,18 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
                 entry.insert(0, text)
                 entry.configure(state="disabled")
                 self.list_widgets_only_entry.append(entry)
-
                 # Добавление кнопки редактирования
                 edit_button = customtkinter.CTkButton(master=self.frame_, text="Редактировать", command=lambda idx=i: self.edit_entry(idx))
                 edit_button.grid(row=i + 1, column=3, padx=5, pady=5)
                 self.list_widgets.append(edit_button)
-
                 # Добавление кнопки удаления
                 delete_button = customtkinter.CTkButton(master=self.frame_, text="Удалить", command=lambda idx=i: self.delete_entry(idx))
                 delete_button.grid(row=i + 1, column=4, padx=5, pady=5)
                 self.list_widgets.append(delete_button)
-
             # Добавление кнопки "+" для добавления новой строки
             add_button = customtkinter.CTkButton(master=self.frame_, text="+", command=lambda idx=i + 2: self.add_new_entry(idx))
             add_button.grid(row=len(assigned_structural_units) + 1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
             self.list_widgets.append(add_button)
-
         else:
 
             CTkMessagebox(title="Ошибка", message="Нет данных для отображения!", icon="warning")
@@ -168,34 +145,26 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
             add_button = customtkinter.CTkButton(master=self.frame_, text="+", command=lambda: self.add_new_entry(1))
             add_button.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
             self.list_widgets.append(add_button)
-
     def edit_entry(self, idx):
         """Метод для редактирования элемента списка."""
         try:
-
             old_value = self.list_widgets_only_entry[idx].get()
-
             dialog = customtkinter.CTkInputDialog(text="Введите новое значение для структурного подразделения:", title="Редактирование")
             new_value = dialog.get_input()  # waits for input
-
-
             # Проверяем, если новое значение не равно None (значение, когда пользователь нажимает Cancel)
             if new_value is not None and new_value.strip():  # Проверка на пустую строку или строку пробелов
                 # Приводим к нижнему регистру для игнорирования регистра при сравнении
                 new_value_lower = new_value.lower()
                 old_value_lower = old_value.lower()
-
                 # Проверяем, есть ли новое значение в других элементах списка
                 for i, entry in enumerate(self.list_widgets_only_entry):
                     if i != idx and entry.get().lower() == new_value_lower:
                         CTkMessagebox(title="Ошибка", message="Это значение уже используется в другой строке.", icon="cancel")
                         return
-
                 # Проверяем, если новое значение совпадает со старым значением
                 if new_value_lower == old_value_lower:
                     CTkMessagebox(title="Ошибка", message="Новое значение совпадает со старым значением.", icon="cancel")
                     return
-
                 # Обновляем текущий элемент
                 self.list_widgets_only_entry[idx].configure(state="normal")
                 self.list_widgets_only_entry[idx].delete(0, customtkinter.END)
@@ -204,7 +173,7 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
                 try:
                     old = f"name = '{old_value}'"
                     new = f"name = '{new_value}'"
-                    if db_manager.update("structural_unit", f"{new}", f"{old}"):
+                    if self.db_manager.update("structural_unit", f"{new}", f"{old}"):
                         CTkMessagebox(title="Успех", message="Наименование успешно изменено!", icon="check", option_1="Ok")
                 except Exception as e:
                     CTkMessagebox(title="Ошибка", message="Ошибка при обновлении наименования структурного подразделения: " + str(e), icon="cancel")
@@ -214,7 +183,6 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
         except Exception as e:
             CTkMessagebox(title="Ошибка", message="Редактирование для новых элементов не доступно! После ввода и добавления выберите филиал заново!", icon="cancel")
             return
-
     def delete_entry(self, idx):
         """Метод для удаления элемента списка."""
         try:
@@ -222,7 +190,7 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
             value_to_delete = self.list_widgets_only_entry[idx].get()
             # Удаляем структурное подразделение из базы данных
             try:
-                if db_manager.delete_data("structural_unit", f"name = '{value_to_delete}'"):
+                if self.db_manager.delete_data("structural_unit", f"name = '{value_to_delete}'"):
                     CTkMessagebox(title="Успех", message="Структурное подразделение успешно удалено!", icon="check", option_1="Ok")
                     # Удаляем виджеты строки из интерфейса
                     for widget in self.list_widgets[idx * 3:idx * 3 + 3]:
@@ -240,30 +208,24 @@ class AioBranchOfficeStructuralUnit(customtkinter.CTkToplevel):
         # Remove the "+" button
         add_button = self.list_widgets.pop()
         add_button.destroy()
-
         # Create a new row for the entry
         new_row_index = new_row_index
-
         label = customtkinter.CTkLabel(master=self.frame_, text=f"Структурное подразделение {new_row_index}", font=("Arial", 12))
         label.grid(row=new_row_index, column=0, padx=10, pady=10, sticky="w")
         self.list_widgets.append(label)
         entry = customtkinter.CTkEntry(master=self.frame_)
         entry.grid(row=new_row_index, column=1, padx=10, pady=10, sticky="nsew")
-
         self.list_widgets_only_entry.append(entry)
         self.update()
-
         # Добавление кнопки редактирования
         edit_button = customtkinter.CTkButton(master=self.frame_, text="Редактировать", command=lambda idx=new_row_index: self.edit_entry(idx))
         edit_button.grid(row=new_row_index, column=3, padx=5, pady=5)
         self.list_widgets.append(edit_button)
-
         # Добавление кнопки удаления
         delete_button = customtkinter.CTkButton(master=self.frame_, text="Удалить", command=lambda idx=new_row_index: self.delete_entry(idx))
         delete_button.grid(row=new_row_index, column=4, padx=5, pady=5)
         self.list_widgets.append(delete_button)
 
-        # Add a new "+" button below the new row
         add_button = customtkinter.CTkButton(master=self.frame_, text="+", command=lambda idx=new_row_index + 1: self.add_new_entry(idx))
         add_button.grid(row=new_row_index + 1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
         self.list_widgets.append(add_button)

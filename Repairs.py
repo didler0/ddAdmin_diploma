@@ -10,12 +10,7 @@ from CTkToolTip import *
 
 from CTkMessagebox import CTkMessagebox
 
-with open('database_info.txt', 'r') as file:
-    db_info = file.read().strip()
-db_info_parts = db_info.split(', ')
-db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
-#тут нужно отделить редактирование и удаление от добавления
-# вынести все к хуям
+
 
 class Repair(customtkinter.CTkToplevel):
     """
@@ -31,7 +26,7 @@ class Repair(customtkinter.CTkToplevel):
         create_window: Создание и настройка окна ремонтов.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, db_manager=None, **kwargs):
         """
         Инициализирует объект Repair.
 
@@ -40,6 +35,7 @@ class Repair(customtkinter.CTkToplevel):
             **kwargs: Именованные аргументы.
         """
         super().__init__(*args, **kwargs)
+        self.db_manager = db_manager
 
         self.second = customtkinter.CTkFrame
         self.last = customtkinter.CTkFrame
@@ -62,13 +58,13 @@ class Repair(customtkinter.CTkToplevel):
         self.grid_rowconfigure(0, weight=1)
         self.frame.grid_columnconfigure(0, weight=1)
 
-        self.second = SecondFrame(self.frame)
+        self.second = SecondFrame(self.frame, db_manager=self.db_manager)
         self.second.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
 
-        self.first = FirstFrame(self.frame, self.second)
+        self.first = FirstFrame(self.frame, self.second, db_manager=self.db_manager)
         self.first.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
-        self.last = ThirdFrame(self.frame, self.second,self.first)
+        self.last = ThirdFrame(self.frame, self.second, self.first, db_manager=self.db_manager)
         self.last.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
 
 
@@ -89,15 +85,17 @@ class SecondFrame(customtkinter.CTkFrame):
         load_repair: Загружает информацию о выбранном ремонте.
         select_date: Открывает календарь для выбора даты ремонта.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, db_manager=None, **kwargs):
         """
                 Инициализирует объект SecondFrame.
 
                 Args:
                     *args: Позиционные аргументы.
+                    db_manager: экземпляр коннекта
                     **kwargs: Именованные аргументы.
                 """
         super().__init__(*args, **kwargs)
+        self.db_manager = db_manager
         self.grid_columnconfigure((0, 1), weight=1)
         self.configure(border_color="dodgerblue", border_width=3)
         customtkinter.CTkLabel(master=self, text="Ремонты", fg_color="gray30", font=("Arial", 14)).grid(row=0, columnspan=3, column=0, padx=10, pady=10, sticky="ew")
@@ -145,7 +143,7 @@ class SecondFrame(customtkinter.CTkFrame):
 
             try:
                 repair_id = int(repair_id)  # Преобразовать строку в целое число
-                repair_path = db_manager.get_data("repair", "document_path", f"id = {repair_id}")[0][0]
+                repair_path = self.db_manager.get_data("repair", "document_path", f"id = {repair_id}")[0][0]
                 # Формирование пути к папке ремонта
                 print(str(repair_path))
                 repair_folder_path = os.path.join(str(repair_path))
@@ -171,7 +169,7 @@ class SecondFrame(customtkinter.CTkFrame):
         parts = choice.split('|')
         repair_id = [part.strip() for part in parts]
         repair_id = repair_id[0]
-        data = db_manager.get_data("repair", "*", f"id = {repair_id}")
+        data = self.db_manager.get_data("repair", "*", f"id = {repair_id}")
         data_for_inset = list()
         for text in data[0]:
             data_for_inset.append(text)
@@ -238,7 +236,7 @@ class FirstFrame(customtkinter.CTkFrame):
             load_data: Загружает данные о филиалах.
             FillComboBox: Заполняет комбобокс данными.
         """
-    def __init__(self, master, secondFrameInstance):
+    def __init__(self, master, secondFrameInstance, db_manager=None):
         """
                 Инициализирует объект FirstFrame.
 
@@ -247,6 +245,7 @@ class FirstFrame(customtkinter.CTkFrame):
                     secondFrameInstance (SecondFrame): Экземпляр второго фрейма для взаимодействия.
                 """
         super().__init__(master)
+        self.db_manager = db_manager
         self.secondFrameInstance = secondFrameInstance
 
         self.grid_columnconfigure((0, 1), weight=1)
@@ -259,7 +258,7 @@ class FirstFrame(customtkinter.CTkFrame):
         customtkinter.CTkLabel(master=self, text="Cтруктурное подразделение").grid(row=2, column=0, padx=10, pady=10, sticky='nsew')
         customtkinter.CTkLabel(master=self, text="Тип устройства").grid(row=3, column=0, padx=10, pady=10, sticky='nsew')
         customtkinter.CTkLabel(master=self, text="Устройство").grid(row=4, column=0, padx=10, pady=10, sticky='nsew')
-        data = db_manager.get_data("branch_office", "name", "")
+        data = self.db_manager.get_data("branch_office", "name", "")
         data = [str(row[0]) for row in data]
         self.combobox1_branch_office = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly", command=self.load_data)
         self.combobox1_branch_office.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
@@ -285,12 +284,12 @@ class FirstFrame(customtkinter.CTkFrame):
                 Args:
                     choice (str): Выбранный тип устройства.
                 """
-        type_of_device_id = db_manager.get_data("type_of_device", "id", f"name = '{choice}'")[0][0]
+        type_of_device_id = self.db_manager.get_data("type_of_device", "id", f"name = '{choice}'")[0][0]
 
-        branch_id = db_manager.get_data("branch_office", "id", f"name = '{self.combobox1_branch_office.get()}'")[0][0]
-        structural_unit_id = db_manager.get_data("structural_unit", "id", f"name = '{self.combobox2_structural_unit.get()}'")[0][0]
+        branch_id = self.db_manager.get_data("branch_office", "id", f"name = '{self.combobox1_branch_office.get()}'")[0][0]
+        structural_unit_id = self.db_manager.get_data("structural_unit", "id", f"name = '{self.combobox2_structural_unit.get()}'")[0][0]
 
-        all_basic_info = db_manager.get_data("basic_info", "*", f"type_of_device_id = {type_of_device_id} AND branch_id = {branch_id} AND structural_unit_id = {structural_unit_id}")
+        all_basic_info = self.db_manager.get_data("basic_info", "*", f"type_of_device_id = {type_of_device_id} AND branch_id = {branch_id} AND structural_unit_id = {structural_unit_id}")
 
         str_data_combobox4 = list()
         for data in all_basic_info:
@@ -308,7 +307,7 @@ class FirstFrame(customtkinter.CTkFrame):
         result_list = [part.strip() for part in parts]
         print(result_list[0])
         try:
-            all_repairs = db_manager.get_data("repair", "*", f"basic_info_id = {result_list[0]}")
+            all_repairs = self.db_manager.get_data("repair", "*", f"basic_info_id = {result_list[0]}")
             print(all_repairs)
             str_data_combobox1_repair = list()
             for data in all_repairs:
@@ -329,9 +328,9 @@ class FirstFrame(customtkinter.CTkFrame):
                 Args:
                     choice (str): Выбранное структурное подразделение.
                 """
-        branch_id = db_manager.get_data("branch_office", "id", f"name = '{self.combobox1_branch_office.get()}'")[0][0]
-        structural_unit_id = db_manager.get_data("structural_unit", "id", f"name = '{choice}'")[0][0]
-        result = db_manager.exec_procedure("GetInfoByBranchAndStructuralUnit", branch_id, structural_unit_id)
+        branch_id = self.db_manager.get_data("branch_office", "id", f"name = '{self.combobox1_branch_office.get()}'")[0][0]
+        structural_unit_id = self.db_manager.get_data("structural_unit", "id", f"name = '{choice}'")[0][0]
+        result = self.db_manager.exec_procedure("GetInfoByBranchAndStructuralUnit", branch_id, structural_unit_id)
         unique_type_of_device = set()
         for row in result:
             unique_type_of_device.add(row[4])
@@ -344,7 +343,7 @@ class FirstFrame(customtkinter.CTkFrame):
                 Args:
                     choice (str): Выбранный филиал.
                 """
-        data = db_manager.exec_procedure("GetStructuralUnits", choice)
+        data = self.db_manager.exec_procedure("GetStructuralUnits", choice)
         data = [str(row[0]) for row in data]
         self.FillComboBox(self.combobox2_structural_unit, data)
 
@@ -375,7 +374,7 @@ class ThirdFrame(customtkinter.CTkFrame):
             delete_repair: Удаляет выбранный ремонт.
             create_repair_folder: Создает папку для нового ремонта.
         """
-    def __init__(self, master, secondFrameInstance,firstFrameInstance):
+    def __init__(self, master, secondFrameInstance,firstFrameInstance, db_manager=None):
         """
                 Инициализирует объект ThirdFrame.
 
@@ -385,6 +384,7 @@ class ThirdFrame(customtkinter.CTkFrame):
                     firstFrameInstance (FirstFrame): Экземпляр первого фрейма для взаимодействия.
                 """
         super().__init__(master)
+        self.db_manager = db_manager
         self.secondFrameInstance = secondFrameInstance
         self.firstFrameInstance = firstFrameInstance
 
@@ -440,7 +440,7 @@ class ThirdFrame(customtkinter.CTkFrame):
             os.makedirs(repair_folder_path)
 
             # Добавляем данные о ремонте в базу данных
-            db_manager.insert_data("repair", "basic_info_id, description, repair_date, document_path",
+            self.db_manager.insert_data("repair", "basic_info_id, description, repair_date, document_path",
                                    f"'{result_list[0]}', '{descr}', '{date}', '{repair_folder_path}'")
 
 
@@ -472,7 +472,7 @@ class ThirdFrame(customtkinter.CTkFrame):
             update_data = f"description = '{descr}', repair_date = '{date}'"
 
             # Обновляем данные в базе данных
-            db_manager.update("repair", update_data, f"id = {repair_id}")
+            self.db_manager.update("repair", update_data, f"id = {repair_id}")
 
             # Выводим сообщение об успешном обновлении ремонта
             CTkMessagebox(title="Успех", message="Информация о ремонте успешно обновлена!", icon="check", option_1="Ok")
@@ -497,12 +497,12 @@ class ThirdFrame(customtkinter.CTkFrame):
             try:
                 parts = choice.split('|')
                 choice = [part.strip() for part in parts]
-                repair_folder_path = db_manager.get_data("repair", "document_path", f"id = {choice[0]}")[0][0]
+                repair_folder_path = self.db_manager.get_data("repair", "document_path", f"id = {choice[0]}")[0][0]
                 # Проверяем существование папки ремонта перед её удалением
                 if os.path.exists(repair_folder_path):
                     # Удаляем папку ремонта
                     shutil.rmtree(repair_folder_path)
-                db_manager.delete_data("repair", f"id = {choice[0]}")
+                self.db_manager.delete_data("repair", f"id = {choice[0]}")
                 # Выводим сообщение об успешном удалении ремонта
                 CTkMessagebox(title="Успех", message="Ремонт успешно удален!", icon="check", option_1="Ok")
             except Exception as e:
@@ -537,9 +537,3 @@ class ThirdFrame(customtkinter.CTkFrame):
             return None
 
 
-
-
-
-if __name__ == "__main__":
-    app = Repair()
-    app.mainloop()

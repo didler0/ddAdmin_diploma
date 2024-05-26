@@ -7,21 +7,13 @@ from ctkcomponents import *
 from CTkMessagebox import CTkMessagebox
 from hPyT import *
 
-# Загрузка информации о базе данных из файла
-with open('database_info.txt', 'r') as file:
-    db_info = file.read().strip()
 
-# Разделение информации о базе данных на части
-db_info_parts = db_info.split(', ')
-
-# Создание экземпляра менеджера базы данных
-db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
 
 
 class PhotoViewer(customtkinter.CTkToplevel):
     """Класс для просмотра фотографий."""
 
-    def __init__(self, *args, basic_id=None, **kwargs):
+    def __init__(self, *args, basic_id=None,db_manager=None, **kwargs):
         """
                 Инициализирует окно просмотра фотографий.
 
@@ -31,6 +23,7 @@ class PhotoViewer(customtkinter.CTkToplevel):
                     **kwargs: Аргументы ключевых слов.
                 """
         super().__init__(*args, **kwargs)
+        self.db_manager = db_manager
         photo_id = basic_id
         self.PhotoView(photo_id)
 
@@ -54,7 +47,7 @@ class PhotoViewer(customtkinter.CTkToplevel):
             maximize_minimize_button.hide(self)
             self.title(f"Просмотр фото для {self.photo_id}")
             self.focus()
-            images = db_manager.get_data("photo", "*", f"basic_info_id = {self.photo_id}")
+            images = self.db_manager.get_data("photo", "*", f"basic_info_id = {self.photo_id}")
             image_paths = self.get_image_paths(images)
             self.rowconfigure(1, weight=1)
             self.frame_p = customtkinter.CTkFrame(master=self, width=300)
@@ -110,7 +103,7 @@ class PhotoViewer(customtkinter.CTkToplevel):
 
     def update_carousel(self):
         """Обновляет карусель изображений."""
-        images = db_manager.get_data("photo", "*", f"basic_info_id = {self.photo_id}")
+        images = self.db_manager.get_data("photo", "*", f"basic_info_id = {self.photo_id}")
         image_paths = self.get_image_paths(images)
         my_carousel = CTkCarousel(master=self.frame_p, img_list=image_paths, width=400, height=400, img_radius=25)
         my_carousel.grid(row=0, column=0, padx=20, pady=20, columnspan=3)
@@ -132,7 +125,7 @@ class PhotoViewer(customtkinter.CTkToplevel):
                 file_name = os.path.basename(file_path)
                 target_file_path = os.path.join("images", file_name)
                 shutil.copy(file_path, "images")
-                db_manager.insert_data("photo", "basic_info_id, path", f"{self.photo_id}, '{file_name}'")
+                self.db_manager.insert_data("photo", "basic_info_id, path", f"{self.photo_id}, '{file_name}'")
                 self.FillComboBoxes()
                 self.update_carousel()
                 CTkMessagebox(title="Успех", message="Фото успешно добавлено!", icon="check", option_1="Ok")
@@ -143,7 +136,7 @@ class PhotoViewer(customtkinter.CTkToplevel):
         """Удаляет выбранное изображение."""
         try:
             curval = self.combobox1.get()
-            db_manager.delete_data("photo", f"path = '{curval}'")
+            self.db_manager.delete_data("photo", f"path = '{curval}'")
             path = os.path.join("images", curval)
             os.remove(path)
             CTkMessagebox(title="Успех", message="Фото успешно удалено!", icon="check", option_1="Ok")
@@ -155,7 +148,7 @@ class PhotoViewer(customtkinter.CTkToplevel):
 
     def FillComboBoxes(self):
         """Заполняет выпадающий список фотографий."""
-        ToComboBoxOne = db_manager.get_data("photo", "*", f"basic_info_id = {self.photo_id}")
+        ToComboBoxOne = self.db_manager.get_data("photo", "*", f"basic_info_id = {self.photo_id}")
         if not ToComboBoxOne:
             self.combobox1.configure(values=[" "])
             return

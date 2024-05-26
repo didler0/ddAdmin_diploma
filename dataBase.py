@@ -1,6 +1,8 @@
 from datetime import datetime
 import random
 
+from CTkMessagebox import CTkMessagebox
+from ctkcomponents import *
 import pyodbc
 
 
@@ -8,9 +10,21 @@ class DatabaseManager:
     def __init__(self, server_name, database_name):
         self.server_name = server_name
         self.database_name = database_name
-        self.conn = pyodbc.connect(
-            f'DRIVER={{SQL Server}};SERVER={server_name};DATABASE={database_name};Trusted_Connection=yes;')
-        self.cur = self.conn.cursor()
+        self.conn = None
+        self.cur = None
+        self.connect()
+
+    def connect(self):
+        try:
+            self.conn = pyodbc.connect(
+                f'DRIVER={{SQL Server}};SERVER={self.server_name};DATABASE={self.database_name};Trusted_Connection=yes;')
+            self.cur = self.conn.cursor()
+            print("Connected to the database successfully.")
+        except pyodbc.Error as e:
+            # Обработка ошибки подключения
+            self.conn = None
+            self.cur = None
+            print(f"Failed to connect to the database: {e}")
 
     def create_tables(self):
         """Метод для проверки наличия таблиц и их создания"""

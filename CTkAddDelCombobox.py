@@ -2,10 +2,7 @@ import customtkinter
 from CTkMessagebox import CTkMessagebox
 from dataBase import *
 
-with open('database_info.txt', 'r') as file:
-    db_info = file.read().strip()
-db_info_parts = db_info.split(', ')
-db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
+
 
 class ComboBoxWithButtons(customtkinter.CTkFrame):
     """
@@ -13,7 +10,7 @@ class ComboBoxWithButtons(customtkinter.CTkFrame):
     и кнопок "+" и "-".
     """
 
-    def __init__(self, master, values=None, table="", command_=None, *args, **kwargs):
+    def __init__(self, master, values=None, table="", command_=None,db_manager=None, *args, **kwargs):
         """
         Инициализация комбинированного виджета.
 
@@ -27,6 +24,7 @@ class ComboBoxWithButtons(customtkinter.CTkFrame):
         """
 
         super().__init__(master, *args, **kwargs)
+        self.db_manager = db_manager
         self.values = values  # Список значений для комбобокса
         self.table = table  # Имя таблицы
 
@@ -128,7 +126,7 @@ class ComboBoxWithButtons(customtkinter.CTkFrame):
         """Метод для применения сделанных изменений и записи их в БД"""
         current_values = self.get_all_values()
         print(current_values)
-        data = db_manager.get_data(self.table, "name")
+        data = self.db_manager.get_data(self.table, "name")
         data = [str(row[0]) for row in data]
         initial_set = set(data)
         current_set = set(current_values)
@@ -154,14 +152,14 @@ class ComboBoxWithButtons(customtkinter.CTkFrame):
 
         # Добавляем добавленные значения в базу данных
         for value in added_values:
-            if not db_manager.insert_data(self.table, "name", f"'{value}'"):
+            if not self.db_manager.insert_data(self.table, "name", f"'{value}'"):
                 print(f"Ошибка при добавлении значения '{value}' в базу данных.")
 
         # Удаляем удаленные значения из базы данных
         for value in removed_values:
-            if not db_manager.delete_data(self.table, f"name = '{value}'"):
+            if not self.db_manager.delete_data(self.table, f"name = '{value}'"):
                 print(f"Ошибка при удалении значения '{value}' из базы данных.")
-        updated_data=db_manager.get_data(self.table,"name",'')
+        updated_data=self.db_manager.get_data(self.table,"name",'')
         updated_data = [str(row[0]) for row in updated_data]
         self.updateValues(updated_data)
         self.combobox.set("")  # Очистить текущий выбор

@@ -12,17 +12,15 @@ from CTkToolTip import *
 import pandas as pd
 from CTkMessagebox import CTkMessagebox
 
-with open('database_info.txt', 'r') as file:
-    db_info = file.read().strip()
-db_info_parts = db_info.split(', ')
-db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
+
 
 
 class ImportDataFromExcel(customtkinter.CTkToplevel):
     """Класс для реализации функциональности импорта данных из Excel в базу данных."""
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args,db_manager=None, **kwargs):
         """Инициализация класса и создание окна."""
         super().__init__(*args, **kwargs)
+        self.db_manager = db_manager
         self.create_window()
         self.file_path = pd.DataFrame
 
@@ -109,33 +107,33 @@ class ImportDataFromExcel(customtkinter.CTkToplevel):
             mater_face = self.file_path['Материально ответственное лицо'].unique()
             place_of_install = self.file_path['№ кабинета'].unique()
             for device in type_of_device:
-                db_manager.insert_data("type_of_device", "name", f"'{device}'")
+                self.db_manager.insert_data("type_of_device", "name", f"'{device}'")
             for branch_office in fillial:
-                db_manager.insert_data("branch_office", "name", f"'{branch_office}'")
+                self.db_manager.insert_data("branch_office", "name", f"'{branch_office}'")
             for structural_unit_ in structural_unit:
-                db_manager.insert_data("structural_unit", "name", f"'{structural_unit_}'")
+                self.db_manager.insert_data("structural_unit", "name", f"'{structural_unit_}'")
             for mat_face in mater_face:
-                db_manager.insert_data("material_resp_person", "name", f"'{mat_face}'")
+                self.db_manager.insert_data("material_resp_person", "name", f"'{mat_face}'")
             for place_of_installation in place_of_install:
-                db_manager.insert_data("place_of_installation", "name", f"'{place_of_installation}'")
+                self.db_manager.insert_data("place_of_installation", "name", f"'{place_of_installation}'")
             df = self.file_path.values.tolist()
             for item in df:
                 # Получение идентификаторов филиала и структурного подразделения
-                id_branch = db_manager.get_data("branch_office", "id", f"name = '{item[0]}'")[0][0]
-                id_unit = db_manager.get_data("structural_unit", "id", f"name = '{item[1]}'")[0][0]
+                id_branch = self.db_manager.get_data("branch_office", "id", f"name = '{item[0]}'")[0][0]
+                id_unit = self.db_manager.get_data("structural_unit", "id", f"name = '{item[1]}'")[0][0]
 
                 # Проверка наличия сочетания филиала и структурного подразделения в базе данных
-                existing_record = db_manager.get_data("branch_structural_unit", "*", f"branch_office_id = '{id_branch}' AND structural_unit_id = '{id_unit}'")
+                existing_record = self.db_manager.get_data("branch_structural_unit", "*", f"branch_office_id = '{id_branch}' AND structural_unit_id = '{id_unit}'")
                 if not existing_record:
                     # Если сочетание не существует, вставляем новые данные
-                    db_manager.insert_data("branch_structural_unit", "branch_office_id, structural_unit_id", f"'{id_branch}', '{id_unit}'")
+                    self.db_manager.insert_data("branch_structural_unit", "branch_office_id, structural_unit_id", f"'{id_branch}', '{id_unit}'")
                 # Составление списка данных для вставки в таблицу basic_info
                 list_basic_info = [
                     item[5], item[6], item[7],
-                    db_manager.get_data("type_of_device", "id", f"name = '{item[3]}'")[0][0],
-                    db_manager.get_data("place_of_installation", "id", f"name = '{item[2]}'")[0][0],
+                    self.db_manager.get_data("type_of_device", "id", f"name = '{item[3]}'")[0][0],
+                    self.db_manager.get_data("place_of_installation", "id", f"name = '{item[2]}'")[0][0],
                     item[8],
-                    db_manager.get_data("material_resp_person", "id", f"name = '{item[4]}'")[0][0],
+                    self.db_manager.get_data("material_resp_person", "id", f"name = '{item[4]}'")[0][0],
                     id_branch,
                     id_unit
                 ]
@@ -144,14 +142,14 @@ class ImportDataFromExcel(customtkinter.CTkToplevel):
                 # Составление списка данных для вставки в таблицу component
                 list_component = item[15:]
                 # Вставка данных в таблицы в порядке: component, detail_info, basic_info
-                db_manager.insert_data_component(*list_component)
-                last_component_id = db_manager.get_last_id("component")
+                self.db_manager.insert_data_component(*list_component)
+                last_component_id = self.db_manager.get_last_id("component")
                 list_detail_info.insert(0, last_component_id)
-                db_manager.insert_data_detail_info(*list_detail_info)
+                self.db_manager.insert_data_detail_info(*list_detail_info)
 
-                last_details_id = db_manager.get_last_id("detail_info")
+                last_details_id = self.db_manager.get_last_id("detail_info")
                 list_basic_info.append(last_details_id)
-                db_manager.insert_data_basic_info(*list_basic_info)
+                self.db_manager.insert_data_basic_info(*list_basic_info)
 
             CTkMessagebox(title="Успех", message="Данные успешно добавлены в базу данных!", icon="check", option_1="Ok")
 

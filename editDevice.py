@@ -4,15 +4,12 @@ from dataBase import DatabaseManager
 from CTkMessagebox import CTkMessagebox
 import CTkAddDelCombobox
 import re
-with open('database_info.txt', 'r') as file:
-    db_info = file.read().strip()
-db_info_parts = db_info.split(', ')
-db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
 
 
 class EditDevice_(customtkinter.CTkToplevel):
-    def __init__(self, *args, basic_id=None, **kwargs):
+    def __init__(self, *args, basic_id=None,db_manager=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.db_manager = db_manager
         self.tabview = None
         self.widgetsBasic = []
         self.widgetsDetail = []
@@ -70,7 +67,7 @@ class EditDevice_(customtkinter.CTkToplevel):
     def update_all_data(self):
         """Метод для обновления всех данных"""
         try:
-            data_basic = db_manager.get_data("basic_info", "*", f"id = {self.basic_id_}")
+            data_basic = self.db_manager.get_data("basic_info", "*", f"id = {self.basic_id_}")
             if data_basic:
                 data_basic = data_basic[0]
                 print(data_basic)
@@ -78,7 +75,7 @@ class EditDevice_(customtkinter.CTkToplevel):
                 data_detail_id = data_basic[11]
                 print(data_detail_id)
 
-                data_component_id = db_manager.get_data("detail_info", "component_id", f"id = {data_detail_id}")
+                data_component_id = self.db_manager.get_data("detail_info", "component_id", f"id = {data_detail_id}")
                 if data_component_id:
                     data_component_id = data_component_id[0][0]
                     print(data_component_id)
@@ -126,7 +123,7 @@ class EditDevice_(customtkinter.CTkToplevel):
         # Обновление значений в values_basic
         for index, table, column, values in columns_to_update:
             value = values[index]  # Значение, которое нужно заменить на id
-            id_result = db_manager.get_data(table, "id", f"name = '{value}'")
+            id_result = self.db_manager.get_data(table, "id", f"name = '{value}'")
             if id_result:
                 values[index] = id_result[0][0]  # Обновляем значение на id из таблицы
             else:
@@ -139,17 +136,17 @@ class EditDevice_(customtkinter.CTkToplevel):
         # Обновление данных в базе
         success = True
 
-        if not db_manager.update_basic_info(*values_basic):
+        if not self.db_manager.update_basic_info(*values_basic):
             CTkMessagebox(title="Ошибка",
                           message=f"Ошибка при обновлении данных в таблице basic_info. Возможно вы не применили изменения в следующих полях: \nТип устройства,\nМесто установки,\nМатериально ответственный.",
                           icon="cancel")
             success = False
 
-        if not db_manager.update_detail_info(*values_details):
+        if not self.db_manager.update_detail_info(*values_details):
             CTkMessagebox(title="Ошибка", message=f"Ошибка при обновлении данных в таблице detail_info.", icon="cancel")
             success = False
 
-        if not db_manager.update_component(*values_component):
+        if not self.db_manager.update_component(*values_component):
             CTkMessagebox(title="Ошибка", message=f"Ошибка при обновлении данных в таблице component.", icon="cancel")
             success = False
 
@@ -172,7 +169,7 @@ class EditDevice_(customtkinter.CTkToplevel):
     def delete_all_data(self):
         """Метод для удаления данных из базы данных"""
         try:
-            db_manager.delete_data("basic_info", f"id = {self.basic_id_}")
+            self.db_manager.delete_data("basic_info", f"id = {self.basic_id_}")
             self.success_("Данные успешно удалены!")
         except Exception as e:
             CTkMessagebox(title="Ошибка", message=f"Ошибка при обновлении данных в таблице component.\n {e}", icon="cancel")
@@ -248,7 +245,7 @@ class EditDevice_(customtkinter.CTkToplevel):
 
         """
         try:
-            data_basic = db_manager.get_data("basic_info", "*", f"id = {self.basic_id_}")
+            data_basic = self.db_manager.get_data("basic_info", "*", f"id = {self.basic_id_}")
             if not data_basic:
                 print("No data found for the specified basic ID.")
                 return
@@ -265,7 +262,7 @@ class EditDevice_(customtkinter.CTkToplevel):
             # Replace IDs with corresponding values
             for column_index, table_name in column_to_table.items():
                 value = data_basic[column_index]  # Get the value from the list
-                name_result = db_manager.get_data(table_name, "name", f"id = '{value}'")  # Fetch the name associated with the ID
+                name_result = self.db_manager.get_data(table_name, "name", f"id = '{value}'")  # Fetch the name associated with the ID
                 if name_result:
                     data_basic[column_index] = name_result[0][0]  # Replace the ID with the name in the list
                 else:
@@ -275,14 +272,14 @@ class EditDevice_(customtkinter.CTkToplevel):
             self.set_data_to_basic(data_basic[:])
 
             # Set data to detail section
-            data_detail = db_manager.get_data("detail_info", "*", f"id = {data_basic[11]}")
+            data_detail = self.db_manager.get_data("detail_info", "*", f"id = {data_basic[11]}")
             if not data_detail:
                 print("No data found for the specified detail ID.")
                 return
             data_detail = list(data_detail[0])
             self.set_data_to_detail(data_detail[:])
             # Set data to component section
-            data_component = db_manager.get_data("component", "*", f"id = {data_detail[1]}")
+            data_component = self.db_manager.get_data("component", "*", f"id = {data_detail[1]}")
             if not data_component:
                 print("No data found for the specified component ID.")
                 return
@@ -309,9 +306,9 @@ class EditDevice_(customtkinter.CTkToplevel):
                 entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(entry)
             elif text == "Место установки":
-                data = db_manager.get_data("place_of_installation", "name", "")
+                data = self.db_manager.get_data("place_of_installation", "name", "")
                 data = [str(row[0]) for row in data]
-                type_of_device = CTkAddDelCombobox.ComboBoxWithButtons(table="place_of_installation", master=self.tabview.tab("Базовая информация"), values=data)
+                type_of_device = CTkAddDelCombobox.ComboBoxWithButtons(table="place_of_installation", master=self.tabview.tab("Базовая информация"), values=data ,db_manager=self.db_manager)
                 type_of_device.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(type_of_device)
             elif text == "Сетевое имя":
@@ -319,26 +316,26 @@ class EditDevice_(customtkinter.CTkToplevel):
                 entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(entry)
             elif text == "Тип устройства":
-                data = db_manager.get_data("type_of_device", "name", "")
+                data = self.db_manager.get_data("type_of_device", "name", "")
                 data = [str(row[0]) for row in data]
-                type_of_device = CTkAddDelCombobox.ComboBoxWithButtons(table="type_of_device", master=self.tabview.tab("Базовая информация"), values=data)
+                type_of_device = CTkAddDelCombobox.ComboBoxWithButtons(table="type_of_device", master=self.tabview.tab("Базовая информация"), values=data,db_manager=self.db_manager)
                 type_of_device.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(type_of_device)
             elif text == "Материально ответственный":
-                data = db_manager.get_data("material_resp_person", "name", "")
+                data = self.db_manager.get_data("material_resp_person", "name", "")
                 data = [str(row[0]) for row in data]
-                structural_unit = CTkAddDelCombobox.ComboBoxWithButtons(table="material_resp_person", master=self.tabview.tab("Базовая информация"), values=data)
+                structural_unit = CTkAddDelCombobox.ComboBoxWithButtons(table="material_resp_person", master=self.tabview.tab("Базовая информация"), values=data,db_manager=self.db_manager)
                 structural_unit.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(structural_unit)
             elif text == "Филиал":
-                data = db_manager.get_data("branch_office", "name", "")
+                data = self.db_manager.get_data("branch_office", "name", "")
                 data = [str(row[0]) for row in data]
                 self.combobox1_branch_office = customtkinter.CTkComboBox(master=self.tabview.tab("Базовая информация"), values=data, state="readonly",
                                                                          command=self.load_data)
                 self.combobox1_branch_office.grid(row=i, column=1, padx=10, pady=10, sticky="nsew")
                 self.widgetsBasic.append(self.combobox1_branch_office)
             elif text == "Структурное подразделение":
-                data = db_manager.get_data("structural_unit", "name", "")
+                data = self.db_manager.get_data("structural_unit", "name", "")
                 data = [str(row[0]) for row in data]
                 self.combobox2_structural_unit = customtkinter.CTkComboBox(master=self.tabview.tab("Базовая информация"), values=[" "], state="readonly")
                 self.combobox2_structural_unit.grid(row=i, column=1, padx=10, pady=10, sticky="nsew")
@@ -353,7 +350,7 @@ class EditDevice_(customtkinter.CTkToplevel):
         """Метод для загрузки данных в комбобокс
             :arg choice - текущий выбор комбобокса
         """
-        data = db_manager.exec_procedure("GetStructuralUnits", choice)
+        data = self.db_manager.exec_procedure("GetStructuralUnits", choice)
         data = [str(row[0]) for row in data]
         self.FillComboBox(self.combobox2_structural_unit, data)
 
@@ -521,12 +518,12 @@ class EditDevice_(customtkinter.CTkToplevel):
         third_element = values_basic[3]
         fourth_element = values_basic[4]
         sixth_element = values_basic[6]
-        if not db_manager.get_data("type_of_device","*",f"name = '{third_element}'"):
+        if not self.db_manager.get_data("type_of_device","*",f"name = '{third_element}'"):
             raise ValueError("Выбрано значение, отсутствующее в базе данных! Нажмите кнопку \"Применить\" Возле поля выбора типа устройства.")
-        if not db_manager.get_data("place_of_installation", "*", f"name = '{fourth_element}'"):
+        if not self.db_manager.get_data("place_of_installation", "*", f"name = '{fourth_element}'"):
             raise ValueError(
                 "Выбрано значение, отсутствующее в базе данных! Нажмите кнопку \"Применить\" Возле поля выбора места установки.")
-        if not db_manager.get_data("material_resp_person", "*", f"name = '{sixth_element}'"):
+        if not self.db_manager.get_data("material_resp_person", "*", f"name = '{sixth_element}'"):
             raise ValueError(
                 "Выбрано значение, отсутствующее в базе данных! Нажмите кнопку \"Применить\" Возле поля выбора материально ответственного.")
 

@@ -4,19 +4,12 @@ from dataBase import DatabaseManager
 from CTkMessagebox import CTkMessagebox
 import CTkAddDelCombobox
 
-# Загрузка информации о базе данных из файла
-with open('database_info.txt', 'r') as file:
-    db_info = file.read().strip()
 
-# Разделение информации о базе данных на части
-db_info_parts = db_info.split(', ')
-
-# Создание экземпляра менеджера базы данных
-db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
 
 class DescriptionViewer(customtkinter.CTkToplevel):
-    def __init__(self, *args, basic_id=None, **kwargs):
+    def __init__(self, *args, basic_id=None,db_manager=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.db_manager = db_manager
         self.tabview = None
         self.widgetsBasic = []
         self.widgetsDetail = []
@@ -137,7 +130,7 @@ class DescriptionViewer(customtkinter.CTkToplevel):
         """
         try:
             # Получение данных базовой информации из базы данных
-            data_basic = db_manager.get_data("basic_info", "*", f"id = {self.basic_id_}")
+            data_basic = self.db_manager.get_data("basic_info", "*", f"id = {self.basic_id_}")
             if not data_basic:
                 print("Данные для указанного базового идентификатора не найдены.")
                 return
@@ -155,7 +148,7 @@ class DescriptionViewer(customtkinter.CTkToplevel):
             # Замена идентификаторов соответствующими значениями
             for column_index, table_name in column_to_table.items():
                 value = data_basic[column_index]  # Получение значения из списка
-                name_result = db_manager.get_data(table_name, "name", f"id = '{value}'")  # Получение соответствующего имени по идентификатору
+                name_result = self.db_manager.get_data(table_name, "name", f"id = '{value}'")  # Получение соответствующего имени по идентификатору
                 if name_result:
                     data_basic[column_index] = name_result[0][0]  # Замена идентификатора на имя в списке
                 else:
@@ -165,7 +158,7 @@ class DescriptionViewer(customtkinter.CTkToplevel):
             self.set_data_to_basic(data_basic[:])
 
             # Установка данных в раздел детальной информации
-            data_detail = db_manager.get_data("detail_info", "*", f"id = {data_basic[11]}")
+            data_detail = self.db_manager.get_data("detail_info", "*", f"id = {data_basic[11]}")
             if not data_detail:
                 print("Данные для указанного идентификатора деталей не найдены.")
                 return
@@ -173,7 +166,7 @@ class DescriptionViewer(customtkinter.CTkToplevel):
             self.set_data_to_detail(data_detail[:])
 
             # Установка данных в раздел информации о компонентах
-            data_component = db_manager.get_data("component", "*", f"id = {data_detail[1]}")
+            data_component = self.db_manager.get_data("component", "*", f"id = {data_detail[1]}")
             if not data_component:
                 print("Данные для указанного идентификатора компонентов не найдены.")
                 return
@@ -234,7 +227,7 @@ class DescriptionViewer(customtkinter.CTkToplevel):
             :arg choice - текущий выбор комбобокса
         """
 
-        data = db_manager.exec_procedure("GetStructuralUnits", choice)
+        data = self.db_manager.exec_procedure("GetStructuralUnits", choice)
         data = [str(row[0]) for row in data]
         self.FillComboBox(self.combobox2_structural_unit, data)
 

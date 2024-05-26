@@ -8,10 +8,7 @@ import CTkAddDelCombobox
 
 
 
-with open('database_info.txt', 'r') as file:
-    db_info = file.read().strip()
-db_info_parts = db_info.split(', ')
-db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
+
 
 
 class AddDevice_(customtkinter.CTkToplevel):
@@ -25,7 +22,7 @@ class AddDevice_(customtkinter.CTkToplevel):
         widgetsComponents: Список виджетов для информации о компонентах.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args,db_manager=None, **kwargs):
         """
         Инициализация окна добавления компьютера.
 
@@ -34,12 +31,14 @@ class AddDevice_(customtkinter.CTkToplevel):
             kwargs: Именованные аргументы.
         """
         super().__init__(*args, **kwargs)
+        self.db_manager = db_manager
         self.combobox_structural_unit = customtkinter.CTkComboBox
         self.tabview = None
         self.widgetsBasic = []
         self.widgetsDetail = []
         self.widgetsComponents = []
         self.create_window()
+
 
     def create_window(self):
         """
@@ -114,9 +113,9 @@ class AddDevice_(customtkinter.CTkToplevel):
                 entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(entry)
             elif text == "Место установки *":
-                data = db_manager.get_data("place_of_installation", "name", "")
+                data = self.db_manager.get_data("place_of_installation", "name", "")
                 data = [str(row[0]) for row in data]
-                type_of_device = CTkAddDelCombobox.ComboBoxWithButtons(table="place_of_installation", master=self.tabview.tab("Базовая информация"), values=data)
+                type_of_device = CTkAddDelCombobox.ComboBoxWithButtons(table="place_of_installation", master=self.tabview.tab("Базовая информация"), values=data,db_manager=self.db_manager)
                 type_of_device.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(type_of_device)
             elif text == "Сетевое имя *":
@@ -124,13 +123,13 @@ class AddDevice_(customtkinter.CTkToplevel):
                 entry.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(entry)
             elif text == "Тип устройства *":
-                data = db_manager.get_data("type_of_device", "name", "")
+                data = self.db_manager.get_data("type_of_device", "name", "")
                 data = [str(row[0]) for row in data]
-                type_of_device = CTkAddDelCombobox.ComboBoxWithButtons(table="type_of_device", master=self.tabview.tab("Базовая информация"), values=data)
+                type_of_device = CTkAddDelCombobox.ComboBoxWithButtons(table="type_of_device", master=self.tabview.tab("Базовая информация"), values=data,db_manager=self.db_manager)
                 type_of_device.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(type_of_device)
             elif text == "Филиал *":
-                data = db_manager.get_data("branch_office", "name", "")
+                data = self.db_manager.get_data("branch_office", "name", "")
                 data = [str(row[0]) for row in data]
                 combobox1 = customtkinter.CTkComboBox(master=self.tabview.tab("Базовая информация"), values=[" "], state="readonly", command=self.load_data)
                 combobox1.grid(row=i, column=1, padx=10, pady=10, sticky="nsew")
@@ -141,9 +140,9 @@ class AddDevice_(customtkinter.CTkToplevel):
                 self.combobox_structural_unit.grid(row=i, column=1, padx=10, pady=10, sticky="nsew")
                 self.widgetsBasic.append(self.combobox_structural_unit)
             elif text == "Материально ответственный *":
-                data = db_manager.get_data("material_resp_person", "name", "")
+                data = self.db_manager.get_data("material_resp_person", "name", "")
                 data = [str(row[0]) for row in data]
-                structural_unit = CTkAddDelCombobox.ComboBoxWithButtons(table="material_resp_person", master=self.tabview.tab("Базовая информация"), values=data)
+                structural_unit = CTkAddDelCombobox.ComboBoxWithButtons(table="material_resp_person", master=self.tabview.tab("Базовая информация"), values=data,db_manager=self.db_manager)
                 structural_unit.grid(row=i, column=1, padx=10, pady=10, sticky="ew")
                 self.widgetsBasic.append(structural_unit)
             else:
@@ -155,7 +154,7 @@ class AddDevice_(customtkinter.CTkToplevel):
         Args:
             choice: Выбранный элемент в комбобоксе.
         """
-        data= db_manager.exec_procedure("GetStructuralUnits",choice)
+        data= self.db_manager.exec_procedure("GetStructuralUnits",choice)
         data = [str(row[0]) for row in data]
         self.FillComboBox(self.combobox_structural_unit,data)
 
@@ -327,12 +326,12 @@ class AddDevice_(customtkinter.CTkToplevel):
         third_element = values_basic[3]
         fourth_element = values_basic[4]
         sixth_element = values_basic[6]
-        if not db_manager.get_data("type_of_device","*",f"name = '{third_element}'"):
+        if not self.db_manager.get_data("type_of_device","*",f"name = '{third_element}'"):
             raise ValueError("Выбрано значение, отсутствующее в базе данных! Нажмите кнопку \"Применить\" Возле поля выбора типа устройства.")
-        if not db_manager.get_data("place_of_installation", "*", f"name = '{fourth_element}'"):
+        if not self.db_manager.get_data("place_of_installation", "*", f"name = '{fourth_element}'"):
             raise ValueError(
                 "Выбрано значение, отсутствующее в базе данных! Нажмите кнопку \"Применить\" Возле поля выбора места установки.")
-        if not db_manager.get_data("material_resp_person", "*", f"name = '{sixth_element}'"):
+        if not self.db_manager.get_data("material_resp_person", "*", f"name = '{sixth_element}'"):
             raise ValueError(
                 "Выбрано значение, отсутствующее в базе данных! Нажмите кнопку \"Применить\" Возле поля выбора материально ответственного.")
 
@@ -372,20 +371,20 @@ class AddDevice_(customtkinter.CTkToplevel):
             # Обновление значений в values_basic
             for index, table, column, values in columns_to_update:
                 value = values[index]  # Значение, которое нужно заменить на id
-                id_result = db_manager.get_data(table, "id", f"name = '{value}'")
+                id_result = self.db_manager.get_data(table, "id", f"name = '{value}'")
                 if id_result:
                     values[index] = id_result[0][0]  # Обновляем значение на id из таблицы
                 else:
                     raise ValueError(f"Вы не применили изменения в следующих полях:Тип устройства, место установки, материально ответственный.\n")
 
-            last_component_id = db_manager.get_last_id("component")
+            last_component_id = self.db_manager.get_last_id("component")
             values_details.insert(0, last_component_id)
-            db_manager.insert_data_component(*values_component)
-            db_manager.insert_data_detail_info(*values_details)
+            self.db_manager.insert_data_component(*values_component)
+            self.db_manager.insert_data_detail_info(*values_details)
 
-            last_details_id = db_manager.get_last_id("detail_info")
+            last_details_id = self.db_manager.get_last_id("detail_info")
             values_basic.append(last_details_id)
-            db_manager.insert_data_basic_info(*values_basic)
+            self.db_manager.insert_data_basic_info(*values_basic)
 
             # Отображение окна с сообщением об успешном добавлении
             CTkMessagebox(title="Успех",
@@ -410,7 +409,3 @@ class AddDevice_(customtkinter.CTkToplevel):
         self.update()
 
 
-if __name__ == "__main__":
-    root = tkinter.Tk()
-    app = AddDevice_(root)
-    root.mainloop()

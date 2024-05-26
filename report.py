@@ -24,11 +24,7 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 customtkinter.set_appearance_mode("Dark")
 customtkinter.set_default_color_theme("blue")
 
-with open('database_info.txt', 'r') as file:
-    db_info = file.read().strip()
-db_info_parts = db_info.split(', ')
-db_manager = DatabaseManager(db_info_parts[0], db_info_parts[1])
-db_manager.create_tables()
+
 
 
 class Reports(customtkinter.CTkToplevel):
@@ -48,7 +44,8 @@ class Reports(customtkinter.CTkToplevel):
         Methods:
             create_widgets: Создает и размещает виджеты в окне.
         """
-    def __init__(self, *args, **kwargs):
+
+    def __init__(self, *args,db_manager=None, **kwargs):
         """
                 Инициализирует объект Reports.
 
@@ -57,6 +54,8 @@ class Reports(customtkinter.CTkToplevel):
                     **kwargs: Дополнительные именованные аргументы.
                 """
         super().__init__(*args, **kwargs)
+
+        self.db_manager = db_manager
         self.create_widgets()
 
     def create_widgets(self):
@@ -73,27 +72,27 @@ class Reports(customtkinter.CTkToplevel):
         self.grid_rowconfigure(0, weight=1)
         self.frame.grid_columnconfigure((0, 1), weight=1)
 
-        self.first = FirstFrameChoise(self.frame)
+        self.first = FirstFrameChoise(self.frame,db_manager=self.db_manager)
         self.first.grid(row=0, column=0, padx=10, pady=10, sticky="", columnspan=3)
 
         # Отчет по статусам работы  - готово
-        self.second = FirstFrameReport(self.frame, self.first)
+        self.second = FirstFrameReport(self.frame, self.first,db_manager=self.db_manager)
         self.second.grid(row=1, column=0, padx=10, pady=10, sticky="")
         # Отчет по ремонтам за промежуток дат  - готово
-        self.third = SecondFrameReport(self.frame, self.first, self.second)
+        self.third = SecondFrameReport(self.frame, self.first, self.second,db_manager=self.db_manager)
         self.third.grid(row=1, column=1, padx=10, pady=10, sticky="")
         # Отчет на выбранное устройство  - готово
-        self.fourth = ThirdFrameReport(self.frame, self.first, self.second)
+        self.fourth = ThirdFrameReport(self.frame, self.first, self.second,db_manager=self.db_manager)
         self.fourth.grid(row=1, column=2, padx=10, pady=10, sticky="ns")
 
         # Отчет по месту установки  - готово
-        self.fifth = FourthFrameReport(self.frame, self.first)
+        self.fifth = FourthFrameReport(self.frame, self.first,db_manager=self.db_manager)
         self.fifth.grid(row=2, column=0, padx=10, pady=10, sticky="ns")
         # По всем устройствам филиала
-        self.sixth = FifthFrameReport(self.frame, self.first)
+        self.sixth = FifthFrameReport(self.frame, self.first,db_manager=self.db_manager)
         self.sixth.grid(row=2, column=1, padx=10, pady=10, sticky="ns")
         # отчет по всем устройствам по структурного подразделения
-        self.seventh = SixthFrameReport(self.frame, self.first)
+        self.seventh = SixthFrameReport(self.frame, self.first,db_manager=self.db_manager)
         self.seventh.grid(row=2, column=2, padx=10, pady=10, sticky="ns")
 
 
@@ -109,7 +108,8 @@ class FirstFrameChoise(customtkinter.CTkFrame):
                 load_data: Загружает данные для структурного подразделения на основе выбранного филиала.
                 FillComboBox: Заполняет комбобокс данными.
             """
-    def __init__(self, *args, **kwargs):
+
+    def __init__(self, *args,db_manager=None, **kwargs):
         """
                         Инициализирует объект FirstFrameChoise.
 
@@ -118,14 +118,14 @@ class FirstFrameChoise(customtkinter.CTkFrame):
                             **kwargs: Дополнительные именованные аргументы.
                         """
         super().__init__(*args, **kwargs)
-
+        self.db_manager = db_manager
         self.configure(border_color="dodgerblue", border_width=3)
         customtkinter.CTkLabel(master=self, text="Выберите филиал").grid(row=0, column=0, padx=10, pady=10,
                                                                          sticky='nsew')
 
         customtkinter.CTkLabel(master=self, text="Выберите структурное подразделение").grid(row=1, column=0, padx=10,
                                                                                             pady=10, sticky='nsew')
-        data = db_manager.get_data("branch_office", "name", "")
+        data = self.db_manager.get_data("branch_office", "name", "")
         data = [str(row[0]) for row in data]
         self.combobox1_branch_office = customtkinter.CTkComboBox(master=self, values=[" "], state="readonly",
                                                                  command=self.load_data)
@@ -144,7 +144,7 @@ class FirstFrameChoise(customtkinter.CTkFrame):
                 Args:
                     choice (str): Выбранный филиал.
                 """
-        data = db_manager.exec_procedure("GetStructuralUnits", choice)
+        data = self.db_manager.exec_procedure("GetStructuralUnits", choice)
         data = [str(row[0]) for row in data]
         self.FillComboBox(self.combobox2_structural_unit, data)
 
@@ -173,7 +173,8 @@ class FirstFrameReport(customtkinter.CTkFrame):
             make_report: Формирует отчет по статусам работы на основе выбранных параметров.
             make_document: Создает документ с отчетом по статусам работы на основе полученных данных.
         """
-    def __init__(self, master, first_frame_ch_instance):
+
+    def __init__(self, master, first_frame_ch_instance,db_manager=None):
         """
                 Инициализирует объект FirstFrameReport.
 
@@ -182,6 +183,7 @@ class FirstFrameReport(customtkinter.CTkFrame):
                     first_frame_ch_instance (FirstFrameChoise): Экземпляр класса FirstFrameChoise.
                 """
         super().__init__(master)
+        self.db_manager = db_manager
         self.first_frame_choise = first_frame_ch_instance
         self.configure(border_color="dodgerblue", border_width=3)
         customtkinter.CTkLabel(master=self, text="Отчет по статусам работы", fg_color="gray30",
@@ -261,7 +263,7 @@ class FirstFrameReport(customtkinter.CTkFrame):
         date_end_str = self.date_End.get_current_date()
         date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
         date_end = datetime.strptime(date_end_str, "%Y-%m-%d")
-        data = db_manager.exec_procedure("GetBasicInfoStatusBetweenDatesInBranchAndStructUnit",
+        data = self.db_manager.exec_procedure("GetBasicInfoStatusBetweenDatesInBranchAndStructUnit",
                                          date_start, date_end,
                                          f"{self.first_frame_choise.combobox1_branch_office.get()}",
                                          f"{self.first_frame_choise.combobox2_structural_unit.get()}")
@@ -332,7 +334,8 @@ class SecondFrameReport(customtkinter.CTkFrame):
             make_report: Формирует отчет по ремонтам на основе выбранных параметров.
             make_document: Создает документ с отчетом по ремонтам на основе полученных данных.
         """
-    def __init__(self, master, first_frame_ch_instance, second_instance):
+
+    def __init__(self, master, first_frame_ch_instance, second_instance,db_manager=None):
         """
                 Инициализирует объект SecondFrameReport.
 
@@ -342,6 +345,7 @@ class SecondFrameReport(customtkinter.CTkFrame):
                     second_instance: Экземпляр класса SecondFrame.
                 """
         super().__init__(master)
+        self.db_manager = db_manager
         self.first_frame_choise = first_frame_ch_instance
         self.second_frame_instance = second_instance
         self.configure(border_color="dodgerblue", border_width=3)
@@ -419,7 +423,7 @@ class SecondFrameReport(customtkinter.CTkFrame):
             date_end_str = self.date_End.get_current_date()
             date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
             date_end = datetime.strptime(date_end_str, "%Y-%m-%d")
-            data = db_manager.exec_procedure("GetRepairsBetweenTwoDates", date_start, date_end,
+            data = self.db_manager.exec_procedure("GetRepairsBetweenTwoDates", date_start, date_end,
                                              f"{self.first_frame_choise.combobox1_branch_office.get()}",
                                              f"{self.first_frame_choise.combobox2_structural_unit.get()}")
             root = tk.Tk()
@@ -463,7 +467,6 @@ class SecondFrameReport(customtkinter.CTkFrame):
             CTkMessagebox(title="Ошибка", message="Ошибка при формировании отчета!", icon="warning")
 
 
-
 class ThirdFrameReport(customtkinter.CTkFrame):
     """
         Класс для создания фрейма формирования отчета по выбранному устройству.
@@ -477,7 +480,8 @@ class ThirdFrameReport(customtkinter.CTkFrame):
             load_devices: Загружает устройства выбранного типа на основе выбранных данных.
             make_report: Формирует отчет по выбранному устройству.
         """
-    def __init__(self, master, first_frame_ch_instance, second_instance):
+
+    def __init__(self, master, first_frame_ch_instance, second_instance,db_manager=None):
         """
                 Инициализирует объект ThirdFrameReport.
 
@@ -487,6 +491,7 @@ class ThirdFrameReport(customtkinter.CTkFrame):
                     second_instance: Экземпляр класса SecondFrame.
                 """
         super().__init__(master)
+        self.db_manager = db_manager
         self.first_frame_choise = first_frame_ch_instance
         self.second_frame_instance = second_instance
         self.grid_rowconfigure((1, 2, 3, 4), weight=1)
@@ -525,9 +530,9 @@ class ThirdFrameReport(customtkinter.CTkFrame):
             CTkMessagebox(title="Ошибка", message="Выберите структурное подразделение!", icon="warning")
             return
         try:
-            id_branch = db_manager.get_data("branch_office", "id", f"name = '{branch_office}'")[0][0]
-            id_unit = db_manager.get_data("structural_unit", "id", f"name = '{structural_unit}'")[0][0]
-            data = db_manager.exec_procedure("GetUniqueDeviceNames", id_branch, id_unit)
+            id_branch = self.db_manager.get_data("branch_office", "id", f"name = '{branch_office}'")[0][0]
+            id_unit = self.db_manager.get_data("structural_unit", "id", f"name = '{structural_unit}'")[0][0]
+            data = self.db_manager.exec_procedure("GetUniqueDeviceNames", id_branch, id_unit)
             data = [str(row[0]) for row in data]
             self.type_of_device_combob.configure(values=data)
             self.update()
@@ -547,11 +552,11 @@ class ThirdFrameReport(customtkinter.CTkFrame):
         if not structural_unit.strip():
             CTkMessagebox(title="Ошибка", message="Выберите структурное подразделение!", icon="warning")
             return
-        id_branch = db_manager.get_data("branch_office", "id", f"name = '{branch_office}'")[0][0]
-        id_unit = db_manager.get_data("structural_unit", "id", f"name = '{structural_unit}'")[0][0]
-        id_type_of_device = db_manager.get_data("type_of_device", "id", f"name = '{choice}'")[0][0]
+        id_branch = self.db_manager.get_data("branch_office", "id", f"name = '{branch_office}'")[0][0]
+        id_unit = self.db_manager.get_data("structural_unit", "id", f"name = '{structural_unit}'")[0][0]
+        id_type_of_device = self.db_manager.get_data("type_of_device", "id", f"name = '{choice}'")[0][0]
 
-        data = db_manager.exec_procedure("GetDeviceDetails", id_branch, id_unit, id_type_of_device)
+        data = self.db_manager.exec_procedure("GetDeviceDetails", id_branch, id_unit, id_type_of_device)
         data = [str(row[0] + " | " + row[1]) for row in data]
         self.device_combob.configure(values=data)
         self.update()
@@ -591,7 +596,7 @@ class ThirdFrameReport(customtkinter.CTkFrame):
             if not file_path:
                 return  # Прерывание функции, если пользователь не выбрал место сохранения
 
-            data = db_manager.exec_procedure("GetDeviceInfoByBranchStrUnitTypeOfDeviceIpNetworkName",
+            data = self.db_manager.exec_procedure("GetDeviceInfoByBranchStrUnitTypeOfDeviceIpNetworkName",
                                              branch_office, structural_unit, type_of_device, ip_address, network_name)
             print(data)
             doc = DocxTemplate("resources\\pattern_for_third_report.docx")
@@ -644,7 +649,8 @@ class FourthFrameReport(customtkinter.CTkFrame):
             load_locations: Загружает доступные места установки на основе выбранных данных.
             make_report: Формирует отчет по выбранному месту установки.
         """
-    def __init__(self, master, first_frame_ch_instance):
+
+    def __init__(self, master, first_frame_ch_instance,db_manager=None):
         """
                 Инициализирует объект FourthFrameReport.
 
@@ -653,6 +659,7 @@ class FourthFrameReport(customtkinter.CTkFrame):
                     first_frame_ch_instance (FirstFrameChoise): Экземпляр класса FirstFrameChoise.
                 """
         super().__init__(master)
+        self.db_manager = db_manager
         self.first_frame_choise = first_frame_ch_instance
         self.grid_rowconfigure((1, 2, 3, 4), weight=1)
         self.configure(border_color="dodgerblue", border_width=3)
@@ -684,7 +691,7 @@ class FourthFrameReport(customtkinter.CTkFrame):
             return
         try:
 
-            data = db_manager.exec_procedure("GetPlaceOfInstallationByBranchAndUnit",branch_office,structural_unit)
+            data = self.db_manager.exec_procedure("GetPlaceOfInstallationByBranchAndUnit", branch_office, structural_unit)
             data = [str(row[0]) for row in data]
             self.place_of_install_combob.configure(values=data)
             self.update()
@@ -710,7 +717,7 @@ class FourthFrameReport(customtkinter.CTkFrame):
             return
 
         try:
-            data = db_manager.exec_procedure("GetDeviceInfoByBranchStrUnitPlaceOf", branch_office, structural_unit,
+            data = self.db_manager.exec_procedure("GetDeviceInfoByBranchStrUnitPlaceOf", branch_office, structural_unit,
                                              place_of_install)
             print(data)
 
@@ -774,7 +781,7 @@ class FourthFrameReport(customtkinter.CTkFrame):
             for col_num, width in enumerate(column_widths, start=1):
                 column_letter = get_column_letter(col_num)
                 ws.column_dimensions[column_letter].width = (
-                                                                        width + 2) * 1.2  # Увеличиваем ширину на 20% от максимальной длины
+                                                                    width + 2) * 1.2  # Увеличиваем ширину на 20% от максимальной длины
 
             root = tk.Tk()
             root.withdraw()  # Скрыть корневое окно
@@ -790,8 +797,9 @@ class FourthFrameReport(customtkinter.CTkFrame):
         except Exception as e:
             CTkMessagebox(title="Ошибка", message=f"Ошибка на этапе формирования отчета!\n {e}", icon="warning")
 
+
 class FifthFrameReport(customtkinter.CTkFrame):
-        """Класс для создания фрейма формирования отчета по устройствам филиала.
+    """Класс для создания фрейма формирования отчета по устройствам филиала.
 
         Attributes:
             first_frame_choise (FirstFrameChoise): Экземпляр класса FirstFrameChoise для доступа к выбранным данным.
@@ -799,114 +807,116 @@ class FifthFrameReport(customtkinter.CTkFrame):
         Methods:
             make_report: Формирует отчет по устройствам выбранного филиала.
         """
-        def __init__(self, master, first_frame_ch_instance):
-            """Инициализирует объект FifthFrameReport.
+
+    def __init__(self, master, first_frame_ch_instance,db_manager=None):
+        """Инициализирует объект FifthFrameReport.
 
                     Args:
                         master: Родительский виджет.
                         first_frame_ch_instance (FirstFrameChoise): Экземпляр класса FirstFrameChoise.
                     """
-            super().__init__(master)
-            self.first_frame_choise = first_frame_ch_instance
-            self.grid_rowconfigure((1, 2, 3, 4), weight=1)
-            self.configure(border_color="dodgerblue", border_width=3)
-            customtkinter.CTkLabel(master=self, text="    Отчет по устройствам филиала    ", fg_color="gray30",
-                                   font=("Arial", 14)).grid(row=0, columnspan=3, column=0, padx=10, pady=10,
-                                                            sticky="ew")
-            customtkinter.CTkButton(master=self, text="Сформировать отчет",
-                                    command=lambda: self.make_report()).grid(
-                row=1, column=0, padx=10, pady=10, sticky="ew", columnspan=3)
-        def make_report(self):
-            """Формирует отчет по устройствам выбранного филиала."""
-            branch_office = self.first_frame_choise.combobox1_branch_office.get()
+        super().__init__(master)
+        self.db_manager = db_manager
+        self.first_frame_choise = first_frame_ch_instance
+        self.grid_rowconfigure((1, 2, 3, 4), weight=1)
+        self.configure(border_color="dodgerblue", border_width=3)
+        customtkinter.CTkLabel(master=self, text="    Отчет по устройствам филиала    ", fg_color="gray30",
+                               font=("Arial", 14)).grid(row=0, columnspan=3, column=0, padx=10, pady=10,
+                                                        sticky="ew")
+        customtkinter.CTkButton(master=self, text="Сформировать отчет",
+                                command=lambda: self.make_report()).grid(
+            row=1, column=0, padx=10, pady=10, sticky="ew", columnspan=3)
 
-            if not branch_office.strip():
-                CTkMessagebox(title="Ошибка", message="Выберите филиал!", icon="warning")
-                return
+    def make_report(self):
+        """Формирует отчет по устройствам выбранного филиала."""
+        branch_office = self.first_frame_choise.combobox1_branch_office.get()
 
-            try:
-                data = db_manager.exec_procedure("GetAllDevicesByBranch", branch_office)
-                print(data)
+        if not branch_office.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите филиал!", icon="warning")
+            return
 
-                wb = Workbook()
-                ws = wb.active
+        try:
+            data = self.db_manager.exec_procedure("GetAllDevicesByBranch", branch_office)
+            print(data)
 
-                # Добавляем строку с данными о филиале
-                ws.append(["Филиал:", branch_office])
-                ws.append([])  # Пустая строка для разделения
+            wb = Workbook()
+            ws = wb.active
 
-                # Заголовки столбцов
-                headers = [
-                    'Филиал',
-                    'Структурное подразделение',
-                    'Инвентарный номер',
-                    'Наименование устройства',
-                    'Сетевое имя',
-                    'Тип устройства',
-                    'Установлен в',
-                    'Описание',
-                    'Материально ответственное лицо',
-                    'Последний статус',
-                    'Дата последнего ремонта',
-                    'Серийный номер',
-                    'MAC адрес',
-                    'Операционная система',
-                    'Год покупки',
-                    'Месяцы гарантии',
-                    'Процессор',
-                    'ОЗУ',
-                    'Материнская плата',
-                    'Видеокарта',
-                    'Блок питания',
-                    'Сетевая карта',
-                    'Кулер',
-                    'Корпус',
-                    'HDD',
-                    'SSD',
-                    'Монитор',
-                    'Клавиатура',
-                    'Мышь',
-                    'Звуковые устройства'
-                ]
+            # Добавляем строку с данными о филиале
+            ws.append(["Филиал:", branch_office])
+            ws.append([])  # Пустая строка для разделения
 
-                # Добавляем заголовки в третью строку (т.к. первые две строки заняты филиалом и пустой строкой)
-                for col, header in enumerate(headers, start=1):
-                    ws.cell(row=3, column=col, value=header)
+            # Заголовки столбцов
+            headers = [
+                'Филиал',
+                'Структурное подразделение',
+                'Инвентарный номер',
+                'Наименование устройства',
+                'Сетевое имя',
+                'Тип устройства',
+                'Установлен в',
+                'Описание',
+                'Материально ответственное лицо',
+                'Последний статус',
+                'Дата последнего ремонта',
+                'Серийный номер',
+                'MAC адрес',
+                'Операционная система',
+                'Год покупки',
+                'Месяцы гарантии',
+                'Процессор',
+                'ОЗУ',
+                'Материнская плата',
+                'Видеокарта',
+                'Блок питания',
+                'Сетевая карта',
+                'Кулер',
+                'Корпус',
+                'HDD',
+                'SSD',
+                'Монитор',
+                'Клавиатура',
+                'Мышь',
+                'Звуковые устройства'
+            ]
 
-                # Автоподбор ширины столбцов на основе заголовков и данных
-                column_widths = [len(header) for header in
-                                 headers]  # Инициализируем ширины столбцов на основе заголовков
+            # Добавляем заголовки в третью строку (т.к. первые две строки заняты филиалом и пустой строкой)
+            for col, header in enumerate(headers, start=1):
+                ws.cell(row=3, column=col, value=header)
 
-                # Заполнение данными начиная с четвертой строки
-                for row_num, item in enumerate(data, start=4):
-                    for col_num, value in enumerate(item, start=1):
-                        ws.cell(row=row_num, column=col_num, value=value)
-                        column_widths[col_num - 1] = max(column_widths[col_num - 1], len(str(value)))
+            # Автоподбор ширины столбцов на основе заголовков и данных
+            column_widths = [len(header) for header in
+                             headers]  # Инициализируем ширины столбцов на основе заголовков
 
-                # Настройка ширины столбцов
-                for col_num, width in enumerate(column_widths, start=1):
-                    column_letter = get_column_letter(col_num)
-                    ws.column_dimensions[column_letter].width = (
-                                                                            width + 2) * 1.2  # Увеличиваем ширину на 20% от максимальной длины
+            # Заполнение данными начиная с четвертой строки
+            for row_num, item in enumerate(data, start=4):
+                for col_num, value in enumerate(item, start=1):
+                    ws.cell(row=row_num, column=col_num, value=value)
+                    column_widths[col_num - 1] = max(column_widths[col_num - 1], len(str(value)))
 
-                root = tk.Tk()
-                root.withdraw()  # Скрыть корневое окно
+            # Настройка ширины столбцов
+            for col_num, width in enumerate(column_widths, start=1):
+                column_letter = get_column_letter(col_num)
+                ws.column_dimensions[column_letter].width = (
+                                                                    width + 2) * 1.2  # Увеличиваем ширину на 20% от максимальной длины
 
-                file_path = filedialog.asksaveasfilename(defaultextension=".xlsx",
-                                                         filetypes=[("Excel files", "*.xlsx")],
-                                                         title="Выберите место сохранения Excel-файла",
-                                                         initialfile=f"Отчет_по_устройствам_{branch_office}.xlsx")
+            root = tk.Tk()
+            root.withdraw()  # Скрыть корневое окно
 
-                if file_path:
-                    wb.save(file_path)
-                    CTkMessagebox(title="Успех", message="Отчет успешно сохранен!", icon="check")
-            except Exception as e:
-                CTkMessagebox(title="Ошибка", message=f"Ошибка на этапе формирования отчета!\n {e}", icon="warning")
+            file_path = filedialog.asksaveasfilename(defaultextension=".xlsx",
+                                                     filetypes=[("Excel files", "*.xlsx")],
+                                                     title="Выберите место сохранения Excel-файла",
+                                                     initialfile=f"Отчет_по_устройствам_{branch_office}.xlsx")
 
+            if file_path:
+                wb.save(file_path)
+                CTkMessagebox(title="Успех", message="Отчет успешно сохранен!", icon="check")
+        except Exception as e:
+            CTkMessagebox(title="Ошибка", message=f"Ошибка на этапе формирования отчета!\n {e}", icon="warning")
 
 
 class SixthFrameReport(customtkinter.CTkFrame):
-        """Класс для создания фрейма формирования отчета по устройствам структурного подразделения.
+    """Класс для создания фрейма формирования отчета по устройствам структурного подразделения.
 
         Attributes:
             first_frame_choise (FirstFrameChoise): Экземпляр класса FirstFrameChoise для доступа к выбранным данным.
@@ -914,116 +924,118 @@ class SixthFrameReport(customtkinter.CTkFrame):
         Methods:
             make_report: Формирует отчет по устройствам выбранного структурного подразделения.
         """
-        def __init__(self, master, first_frame_ch_instance):
-            """Инициализирует объект SixthFrameReport.
+
+    def __init__(self, master, first_frame_ch_instance,db_manager=None):
+        """Инициализирует объект SixthFrameReport.
 
                     Args:
                         master: Родительский виджет.
                         first_frame_ch_instance (FirstFrameChoise): Экземпляр класса FirstFrameChoise.
                     """
-            super().__init__(master)
-            self.first_frame_choise = first_frame_ch_instance
-            self.grid_rowconfigure((1, 2, 3, 4), weight=1)
-            self.configure(border_color="dodgerblue", border_width=3)
-            customtkinter.CTkLabel(master=self, text="    Отчет по устройствам структурного подразделения    ", fg_color="gray30",
-                                   font=("Arial", 14)).grid(row=0, columnspan=3, column=0, padx=10, pady=10,
-                                                            sticky="ew")
-            customtkinter.CTkButton(master=self, text="Сформировать отчет",
-                                    command=lambda: self.make_report()).grid(
-                row=1, column=0, padx=10, pady=10, sticky="ew", columnspan=3)
+        super().__init__(master)
+        self.db_manager = db_manager
+        self.first_frame_choise = first_frame_ch_instance
+        self.grid_rowconfigure((1, 2, 3, 4), weight=1)
+        self.configure(border_color="dodgerblue", border_width=3)
+        customtkinter.CTkLabel(master=self, text="    Отчет по устройствам структурного подразделения    ",
+                               fg_color="gray30",
+                               font=("Arial", 14)).grid(row=0, columnspan=3, column=0, padx=10, pady=10,
+                                                        sticky="ew")
+        customtkinter.CTkButton(master=self, text="Сформировать отчет",
+                                command=lambda: self.make_report()).grid(
+            row=1, column=0, padx=10, pady=10, sticky="ew", columnspan=3)
 
-        def make_report(self):
-            """Формирует отчет по устройствам выбранного структурного подразделения."""
-            branch_office = self.first_frame_choise.combobox1_branch_office.get()
-            structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
+    def make_report(self):
+        """Формирует отчет по устройствам выбранного структурного подразделения."""
+        branch_office = self.first_frame_choise.combobox1_branch_office.get()
+        structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
 
-            if not branch_office.strip():
-                CTkMessagebox(title="Ошибка", message="Выберите филиал!", icon="warning")
-                return
-            if not structural_unit.strip():
-                CTkMessagebox(title="Ошибка", message="Выберите структурное подразделение!", icon="warning")
-                return
+        if not branch_office.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите филиал!", icon="warning")
+            return
+        if not structural_unit.strip():
+            CTkMessagebox(title="Ошибка", message="Выберите структурное подразделение!", icon="warning")
+            return
 
-            try:
-                data = db_manager.exec_procedure("GetAllDevicesByUnit", branch_office, structural_unit)
-                print(data)
+        try:
+            data = self.db_manager.exec_procedure("GetAllDevicesByUnit", branch_office, structural_unit)
+            print(data)
 
-                wb = Workbook()
-                ws = wb.active
+            wb = Workbook()
+            ws = wb.active
 
-                # Добавляем строки с данными о филиале и структурном подразделении
-                ws.append(["Филиал:", branch_office])
-                ws.append(["Структурное подразделение:", structural_unit])
-                ws.append([])  # Пустая строка для разделения
+            # Добавляем строки с данными о филиале и структурном подразделении
+            ws.append(["Филиал:", branch_office])
+            ws.append(["Структурное подразделение:", structural_unit])
+            ws.append([])  # Пустая строка для разделения
 
-                # Заголовки столбцов
-                headers = [
-                    'Филиал',
-                    'Структурное подразделение',
-                    'Инвентарный номер',
-                    'Наименование устройства',
-                    'Сетевое имя',
-                    'Тип устройства',
-                    'Установлен в',
-                    'Описание',
-                    'Материально ответственное лицо',
-                    'Последний статус',
-                    'Дата последнего ремонта',
-                    'Серийный номер',
-                    'MAC адрес',
-                    'Операционная система',
-                    'Год покупки',
-                    'Месяцы гарантии',
-                    'Процессор',
-                    'ОЗУ',
-                    'Материнская плата',
-                    'Видеокарта',
-                    'Блок питания',
-                    'Сетевая карта',
-                    'Кулер',
-                    'Корпус',
-                    'HDD',
-                    'SSD',
-                    'Монитор',
-                    'Клавиатура',
-                    'Мышь',
-                    'Звуковые устройства'
-                ]
+            # Заголовки столбцов
+            headers = [
+                'Филиал',
+                'Структурное подразделение',
+                'Инвентарный номер',
+                'Наименование устройства',
+                'Сетевое имя',
+                'Тип устройства',
+                'Установлен в',
+                'Описание',
+                'Материально ответственное лицо',
+                'Последний статус',
+                'Дата последнего ремонта',
+                'Серийный номер',
+                'MAC адрес',
+                'Операционная система',
+                'Год покупки',
+                'Месяцы гарантии',
+                'Процессор',
+                'ОЗУ',
+                'Материнская плата',
+                'Видеокарта',
+                'Блок питания',
+                'Сетевая карта',
+                'Кулер',
+                'Корпус',
+                'HDD',
+                'SSD',
+                'Монитор',
+                'Клавиатура',
+                'Мышь',
+                'Звуковые устройства'
+            ]
 
-                # Добавляем заголовки в пятую строку (т.к. первые четыре строки заняты информацией о филиале и подразделении)
-                for col, header in enumerate(headers, start=1):
-                    ws.cell(row=5, column=col, value=header)
+            # Добавляем заголовки в пятую строку (т.к. первые четыре строки заняты информацией о филиале и подразделении)
+            for col, header in enumerate(headers, start=1):
+                ws.cell(row=5, column=col, value=header)
 
-                # Автоподбор ширины столбцов на основе заголовков и данных
-                column_widths = [len(header) for header in
-                                 headers]  # Инициализируем ширины столбцов на основе заголовков
+            # Автоподбор ширины столбцов на основе заголовков и данных
+            column_widths = [len(header) for header in
+                             headers]  # Инициализируем ширины столбцов на основе заголовков
 
-                # Заполнение данными начиная с шестой строки
-                for row_num, item in enumerate(data, start=6):
-                    for col_num, value in enumerate(item, start=1):
-                        ws.cell(row=row_num, column=col_num, value=value)
-                        column_widths[col_num - 1] = max(column_widths[col_num - 1], len(str(value)))
+            # Заполнение данными начиная с шестой строки
+            for row_num, item in enumerate(data, start=6):
+                for col_num, value in enumerate(item, start=1):
+                    ws.cell(row=row_num, column=col_num, value=value)
+                    column_widths[col_num - 1] = max(column_widths[col_num - 1], len(str(value)))
 
-                # Настройка ширины столбцов
-                for col_num, width in enumerate(column_widths, start=1):
-                    column_letter = get_column_letter(col_num)
-                    ws.column_dimensions[column_letter].width = (
-                                                                            width + 2) * 1.2  # Увеличиваем ширину на 20% от максимальной длины
+            # Настройка ширины столбцов
+            for col_num, width in enumerate(column_widths, start=1):
+                column_letter = get_column_letter(col_num)
+                ws.column_dimensions[column_letter].width = (
+                                                                    width + 2) * 1.2  # Увеличиваем ширину на 20% от максимальной длины
 
-                root = tk.Tk()
-                root.withdraw()  # Скрыть корневое окно
+            root = tk.Tk()
+            root.withdraw()  # Скрыть корневое окно
 
-                file_path = filedialog.asksaveasfilename(defaultextension=".xlsx",
-                                                         filetypes=[("Excel files", "*.xlsx")],
-                                                         title="Выберите место сохранения Excel-файла",
-                                                         initialfile=f"Отчет_по_устройствам_{branch_office}_{structural_unit}.xlsx")
+            file_path = filedialog.asksaveasfilename(defaultextension=".xlsx",
+                                                     filetypes=[("Excel files", "*.xlsx")],
+                                                     title="Выберите место сохранения Excel-файла",
+                                                     initialfile=f"Отчет_по_устройствам_{branch_office}_{structural_unit}.xlsx")
 
-                if file_path:
-                    wb.save(file_path)
-                    CTkMessagebox(title="Успех", message="Отчет успешно сохранен!", icon="check")
-            except Exception as e:
-                CTkMessagebox(title="Ошибка", message=f"Ошибка на этапе формирования отчета!\n {e}", icon="warning")
-
+            if file_path:
+                wb.save(file_path)
+                CTkMessagebox(title="Успех", message="Отчет успешно сохранен!", icon="check")
+        except Exception as e:
+            CTkMessagebox(title="Ошибка", message=f"Ошибка на этапе формирования отчета!\n {e}", icon="warning")
 
 
 if __name__ == "__main__":
