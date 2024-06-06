@@ -3,7 +3,7 @@ from tkcalendar import Calendar
 from hPyT import *
 from PIL import Image
 import os
-
+import babel.numbers
 
 class SelectDate(customtkinter.CTkFrame):
     """
@@ -85,7 +85,7 @@ class SelectDate(customtkinter.CTkFrame):
             self.additionalWIN.title(f"Calendar")
             self.additionalWIN.focus()
             maximize_minimize_button.hide(self.additionalWIN)
-            cal = Calendar(self.additionalWIN, selectmode='day', date_pattern="yyyy-mm-dd")
+            cal = Calendar(self.additionalWIN, selectmode='day', date_pattern="dd.mm.yyyy")
             def set_date(selected_entry):
                 def inner():
                     selected_date = cal.get_date()

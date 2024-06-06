@@ -130,7 +130,7 @@ class PhotoViewer(customtkinter.CTkToplevel):
                 self.update_carousel()
                 CTkMessagebox(title="Успех", message="Фото успешно добавлено!", icon="check", option_1="Ok")
             except Exception as e:
-                CTkMessagebox(title="Ошибка", message="Ошибка при открытии изображения.", icon="cancel")
+                CTkMessagebox(title="Ошибка", message=f"Ошибка при открытии изображения.\n{e}", icon="cancel")
 
     def DelPic(self):
         """Удаляет выбранное изображение."""
@@ -143,7 +143,7 @@ class PhotoViewer(customtkinter.CTkToplevel):
             self.FillComboBoxes()
             self.update_carousel()
         except IOError as e:
-            CTkMessagebox(title="Ошибка", message="Во время удаления произошла ошибка!", icon="cancel")
+            CTkMessagebox(title="Ошибка", message=f"Во время удаления произошла ошибка!\n{e}", icon="cancel")
             return False
 
     def FillComboBoxes(self):

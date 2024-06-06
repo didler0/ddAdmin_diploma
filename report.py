@@ -8,11 +8,12 @@ from hPyT import *
 from PIL import Image
 import os
 from tkcalendar import Calendar
+import datetime
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from CTkToolTip import *
 from docx import *
-from datetime import datetime, timedelta
+
 import CTkSelectDate
 from CTkSelectDate import *
 from dataBase import DatabaseManager
@@ -162,26 +163,7 @@ class FirstFrameChoise(customtkinter.CTkFrame):
 
 
 class FirstFrameReport(customtkinter.CTkFrame):
-    """
-        Класс для создания фрейма формирования отчета по статусам работы.
-
-        Attributes:
-            first_frame_choise (FirstFrameChoise): Экземпляр класса FirstFrameChoise для доступа к выбранным данным.
-
-        Methods:
-            compare_dates: Сравнивает две даты на предмет их порядка.
-            make_report: Формирует отчет по статусам работы на основе выбранных параметров.
-            make_document: Создает документ с отчетом по статусам работы на основе полученных данных.
-        """
-
-    def __init__(self, master, first_frame_ch_instance,db_manager=None):
-        """
-                Инициализирует объект FirstFrameReport.
-
-                Args:
-                    master: Родительский виджет.
-                    first_frame_ch_instance (FirstFrameChoise): Экземпляр класса FirstFrameChoise.
-                """
+    def __init__(self, master, first_frame_ch_instance, db_manager=None):
         super().__init__(master)
         self.db_manager = db_manager
         self.first_frame_choise = first_frame_ch_instance
@@ -203,24 +185,12 @@ class FirstFrameReport(customtkinter.CTkFrame):
         self.MakeReport1Button.grid(row=4, column=0, columnspan=2, pady=10, padx=10, sticky="ew")
 
     def compare_dates(self, date1_str, date2_str):
-        """
-                Сравнивает две даты на предмет их порядка.
-
-                Args:
-                    date1_str (str): Первая дата в формате "гггг-мм-дд".
-                    date2_str (str): Вторая дата в формате "гггг-мм-дд".
-
-                Returns:
-                    bool: True, если первая дата меньше или равна второй, иначе False.
-                """
-        return datetime.strptime(date1_str, "%Y-%m-%d") <= datetime.strptime(date2_str, "%Y-%m-%d")
+        return datetime.datetime.strptime(date1_str, "%Y-%m-%d") <= datetime.datetime.strptime(date2_str, "%Y-%m-%d")
 
     def make_report(self):
-        """Формирует отчет по статусам работы на основе выбранных параметров."""
         branch_office = self.first_frame_choise.combobox1_branch_office.get()
         structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
 
-        # Check if either combobox is empty
         if not branch_office.strip():
             CTkMessagebox(title="Ошибка", message="Выберите филиал!", icon="warning")
             return
@@ -231,7 +201,6 @@ class FirstFrameReport(customtkinter.CTkFrame):
         date_start_str = self.date_Start.get_current_date()
         date_end_str = self.date_End.get_current_date()
 
-        # Check if either date is empty
         if not date_start_str.strip():
             CTkMessagebox(title="Ошибка", message="Выберите дату начала периода!", icon="warning")
             return
@@ -240,43 +209,47 @@ class FirstFrameReport(customtkinter.CTkFrame):
             return
 
         try:
-            date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
-            date_end = datetime.strptime(date_end_str, "%Y-%m-%d")
+            date_start_iso = datetime.datetime.strptime(date_start_str, "%d.%m.%Y").strftime("%Y-%m-%d")
+            date_end_iso = datetime.datetime.strptime(date_end_str, "%d.%m.%Y").strftime("%Y-%m-%d")
         except ValueError as e:
             CTkMessagebox(title="Ошибка", message="Неверный формат даты!", icon="warning")
             return
 
-        if self.compare_dates(date_start_str, date_end_str):
+
+
+        try:
+            date_start = datetime.datetime.strptime(date_start_iso, "%Y-%m-%d")
+            date_end = datetime.datetime.strptime(date_end_iso, "%Y-%m-%d")
+        except ValueError as e:
+            CTkMessagebox(title="Ошибка", message="Неверный формат даты!", icon="warning")
+            return
+
+        if self.compare_dates(date_start_iso, date_end_iso):
             diff = date_end - date_start
             if diff.days >= 0:
                 print(branch_office)
                 print(structural_unit)
-                self.make_document()
+                self.make_document(date_start, date_end)
             else:
                 CTkMessagebox(title="Ошибка", message="Дата начала позже даты окончания.", icon="warning")
         else:
             CTkMessagebox(title="Ошибка", message="Дата начала позже даты окончания.", icon="warning")
 
-    def make_document(self):
-        """Создает документ с отчетом по статусам работы на основе полученных данных."""
-        date_start_str = self.date_Start.get_current_date()
-        date_end_str = self.date_End.get_current_date()
-        date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
-        date_end = datetime.strptime(date_end_str, "%Y-%m-%d")
+    def make_document(self, date_start, date_end):
         data = self.db_manager.exec_procedure("GetBasicInfoStatusBetweenDatesInBranchAndStructUnit",
-                                         date_start, date_end,
-                                         f"{self.first_frame_choise.combobox1_branch_office.get()}",
-                                         f"{self.first_frame_choise.combobox2_structural_unit.get()}")
-        # Создание диалогового окна выбора места сохранения документа
+                                              date_start, date_end,
+                                              f"{self.first_frame_choise.combobox1_branch_office.get()}",
+                                              f"{self.first_frame_choise.combobox2_structural_unit.get()}")
         root = tk.Tk()
-        root.withdraw()  # Скрытие корневого окна
+        root.withdraw()
         file_path = filedialog.asksaveasfilename(defaultextension=".docx",
                                                  filetypes=[("Word Document", "*.docx")],
                                                  title="Выберите место сохранения документа",
                                                  initialfile="ОтчетПоСтатусамРаботы")
 
         if not file_path:
-            return  # Прерывание функции, если пользователь не выбрал место сохранения
+            return
+
         try:
             doc = Document()
             title = doc.add_heading(
@@ -284,10 +257,8 @@ class FirstFrameReport(customtkinter.CTkFrame):
                 f'Структурное подразделение - {self.first_frame_choise.combobox2_structural_unit.get()}', level=1)
             title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
-            # Добавление таблицы с данными
             table = doc.add_table(rows=1, cols=5)
             table.style = 'Table Grid'
-            # Заголовки столбцов
             hdr_cells = table.rows[0].cells
             hdr_cells[0].text = 'Название'
             hdr_cells[1].text = 'Сетевое имя'
@@ -295,55 +266,48 @@ class FirstFrameReport(customtkinter.CTkFrame):
             hdr_cells[3].text = 'Место установки'
             hdr_cells[4].text = 'Дата'
 
-            # Заполнение таблицы данными
             for item in data:
                 row_cells = table.add_row().cells
-                row_cells[0].text = item[0]  # Название
-                row_cells[1].text = item[1]  # Сетевое имя
-                row_cells[2].text = "On" if item[2] else "Off"  # Статус
-                row_cells[3].text = item[4]  # Место установки
-                row_cells[4].text = item[3].strftime("%Y-%m-%d %H:%M:%S")
+                row_cells[0].text = item[0]
+                row_cells[1].text = item[1]
+                row_cells[2].text = "On" if item[2] else "Off"
+                row_cells[3].text = item[4]
+                row_cells[4].text = item[3].strftime("%d.%m.%Y %H:%M:%S")
 
-                # Установка цвета текста в ячейке в зависимости от статуса
-                if item[2]:  # Если статус равен True (1 или "On")
-                    color = RGBColor(0, 128, 0)  # Зеленый цвет
-                else:
-                    color = RGBColor(255, 0, 0)  # Красный цвет
+                color = RGBColor(0, 128, 0) if item[2] else RGBColor(255, 0, 0)
                 for cell in row_cells:
                     for paragraph in cell.paragraphs:
                         for run in paragraph.runs:
                             run.font.color.rgb = color
 
-            # Сохранение документа
             doc.save(file_path)
             CTkMessagebox(title="Успех", message="Отчет успешно сформирован.", icon="check")
         except Exception as e:
             CTkMessagebox(title="Ошибка", message="Ошибка при формировании отчета!", icon="warning")
 
-
 class SecondFrameReport(customtkinter.CTkFrame):
     """
-        Класс для создания фрейма формирования отчета по ремонтам.
+    Класс для создания фрейма формирования отчета по ремонтам.
 
-        Attributes:
-            first_frame_choise (FirstFrameChoise): Экземпляр класса FirstFrameChoise для доступа к выбранным данным.
-            second_frame_instance: Экземпляр класса SecondFrame.
+    Attributes:
+        first_frame_choise (FirstFrameChoise): Экземпляр класса FirstFrameChoise для доступа к выбранным данным.
+        second_frame_instance: Экземпляр класса SecondFrame.
 
-        Methods:
-            compare_dates: Сравнивает две даты на предмет их порядка.
-            make_report: Формирует отчет по ремонтам на основе выбранных параметров.
-            make_document: Создает документ с отчетом по ремонтам на основе полученных данных.
+    Methods:
+        compare_dates: Сравнивает две даты на предмет их порядка.
+        make_report: Формирует отчет по ремонтам на основе выбранных параметров.
+        make_document: Создает документ с отчетом по ремонтам на основе полученных данных.
+    """
+
+    def __init__(self, master, first_frame_ch_instance, second_instance, db_manager=None):
         """
+        Инициализирует объект SecondFrameReport.
 
-    def __init__(self, master, first_frame_ch_instance, second_instance,db_manager=None):
+        Args:
+            master: Родительский виджет.
+            first_frame_ch_instance (FirstFrameChoise): Экземпляр класса FirstFrameChoise.
+            second_instance: Экземпляр класса SecondFrame.
         """
-                Инициализирует объект SecondFrameReport.
-
-                Args:
-                    master: Родительский виджет.
-                    first_frame_ch_instance (FirstFrameChoise): Экземпляр класса FirstFrameChoise.
-                    second_instance: Экземпляр класса SecondFrame.
-                """
         super().__init__(master)
         self.db_manager = db_manager
         self.first_frame_choise = first_frame_ch_instance
@@ -367,24 +331,17 @@ class SecondFrameReport(customtkinter.CTkFrame):
 
     def make_report(self):
         """
-                Сравнивает две даты на предмет их порядка.
-
-                Args:
-                    date1_str (str): Первая дата в формате "гггг-мм-дд".
-                    date2_str (str): Вторая дата в формате "гггг-мм-дд".
-
-                Returns:
-                    bool: True, если первая дата меньше или равна второй, иначе False.
-                """
+        Сравнивает две даты на предмет их порядка.
+        """
         branch_office = self.first_frame_choise.combobox1_branch_office.get()
         structural_unit = self.first_frame_choise.combobox2_structural_unit.get()
 
         # Check if either combobox is empty
         if not branch_office.strip():
-            CTkMessagebox(title="Ошибка", message="Выберите филиал!", icon="warning")
+            CTkMessagebox.showwarning("Ошибка", "Выберите филиал!")
             return
         if not structural_unit.strip():
-            CTkMessagebox(title="Ошибка", message="Выберите структурное подразделение!", icon="warning")
+            CTkMessagebox.showwarning("Ошибка", "Выберите структурное подразделение!")
             return
 
         date_start_str = self.date_Start.get_current_date()
@@ -392,37 +349,50 @@ class SecondFrameReport(customtkinter.CTkFrame):
 
         # Check if either date is empty
         if not date_start_str.strip():
-            CTkMessagebox(title="Ошибка", message="Выберите дату начала периода!", icon="warning")
+            CTkMessagebox.showwarning("Ошибка", "Выберите дату начала периода!")
             return
         if not date_end_str.strip():
-            CTkMessagebox(title="Ошибка", message="Выберите дату конца периода!", icon="warning")
+            CTkMessagebox.showwarning("Ошибка", "Выберите дату конца периода!")
             return
 
         try:
-            date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
-            date_end = datetime.strptime(date_end_str, "%Y-%m-%d")
+            # Преобразование даты из дд.мм.гггг в гггг-мм-дд
+            date_start_iso = datetime.datetime.strptime(date_start_str, "%d.%m.%Y").strftime("%Y-%m-%d")
+            date_end_iso = datetime.datetime.strptime(date_end_str, "%d.%m.%Y").strftime("%Y-%m-%d")
         except ValueError as e:
-            CTkMessagebox(title="Ошибка", message="Неверный формат даты!", icon="warning")
+            CTkMessagebox.showwarning("Ошибка", "Неверный формат даты!")
             return
 
-        if self.second_frame_instance.compare_dates(date_start_str, date_end_str):
+        try:
+            date_start = datetime.datetime.strptime(date_start_iso, "%Y-%m-%d")
+            date_end = datetime.datetime.strptime(date_end_iso, "%Y-%m-%d")
+        except ValueError as e:
+            CTkMessagebox.showwarning("Ошибка", "Неверный формат даты!")
+            return
+
+        if self.compare_dates(date_start_iso, date_end_iso):
             diff = date_end - date_start
             if diff.days >= 0:
                 print(branch_office)
                 print(structural_unit)
                 self.make_document()
             else:
-                CTkMessagebox(title="Ошибка", message="Дата начала позже даты окончания.", icon="warning")
+                CTkMessagebox.showwarning("Ошибка", "Дата начала позже даты окончания.")
         else:
-            CTkMessagebox(title="Ошибка", message="Дата начала позже даты окончания.", icon="warning")
+            CTkMessagebox.showwarning("Ошибка", "Дата начала позже даты окончания.")
+
+    def compare_dates(self, date1_str, date2_str):
+        return datetime.datetime.strptime(date1_str, "%Y-%m-%d") <= datetime.datetime.strptime(date2_str, "%Y-%m-%d")
 
     def make_document(self):
         """Формирует отчет по ремонтам на основе выбранных параметров."""
         try:
             date_start_str = self.date_Start.get_current_date()
             date_end_str = self.date_End.get_current_date()
-            date_start = datetime.strptime(date_start_str, "%Y-%m-%d")
-            date_end = datetime.strptime(date_end_str, "%Y-%m-%d")
+
+            date_start = datetime.datetime.strptime(date_start_str, "%d.%m.%Y").strftime("%Y-%m-%d")
+            date_end = datetime.datetime.strptime(date_end_str, "%d.%m.%Y").strftime("%Y-%m-%d")
+
             data = self.db_manager.exec_procedure("GetRepairsBetweenTwoDates", date_start, date_end,
                                              f"{self.first_frame_choise.combobox1_branch_office.get()}",
                                              f"{self.first_frame_choise.combobox2_structural_unit.get()}")
@@ -457,14 +427,14 @@ class SecondFrameReport(customtkinter.CTkFrame):
                 row_cells[0].text = str(item[0])  # Название
                 row_cells[1].text = str(item[1])  # Сетевое имя
                 row_cells[2].text = str(item[2])
-                row_cells[3].text = str(item[3])  # Место установки
+                row_cells[3].text = datetime.datetime.strptime(str(item[3]), "%Y-%m-%d").strftime("%d.%m.%Y")  # Место установки
                 row_cells[4].text = str(item[4])
 
             # Сохранение документа
             doc.save(file_path)
             CTkMessagebox(title="Успех", message="Отчет успешно сформирован.", icon="check")
         except Exception as e:
-            CTkMessagebox(title="Ошибка", message="Ошибка при формировании отчета!", icon="warning")
+            CTkMessagebox(title="Ошибка", message=f"Ошибка при формировании отчета!\n{e}", icon="warning")
 
 
 class ThirdFrameReport(customtkinter.CTkFrame):
@@ -636,7 +606,7 @@ class ThirdFrameReport(customtkinter.CTkFrame):
             doc.save(file_path)
             CTkMessagebox(title="Успех", message="Отчет успешно сформирован.", icon="check")
         except Exception as e:
-            CTkMessagebox(title="Ошибка", message="Ошибка при формировании отчета!", icon="warning")
+            CTkMessagebox(title="Ошибка", message="Ошибка при формировании отчета!\n{e}", icon="warning")
 
 
 class FourthFrameReport(customtkinter.CTkFrame):

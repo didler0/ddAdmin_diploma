@@ -1,10 +1,9 @@
 import concurrent.futures
-
 import os
 import sys
 import threading
 import subprocess
-import time
+from datetime import datetime
 from tkinter import messagebox
 import pyodbc
 import customtkinter as customtkinter
@@ -162,7 +161,7 @@ class MiddleFrame(customtkinter.CTkFrame):
         unique_cabinets = set()  # Создаем множество для хранения уникальных номеров кабинетов
 
         for row in result:
-            unique_cabinets.add(row[5])  # Добавляем номер кабинета в множество
+            unique_cabinets.add(row[5])  # Дёбавляем номер кабинета в множество
         unique_cabinets = sorted(unique_cabinets)
         self.tabview = customtkinter.CTkTabview(master=self.DownFrame)
         customtkinter.CTkLabel(master=self.DownFrame, text="Место установки").grid(row=0, column=0)
@@ -297,6 +296,7 @@ class DownFrame(customtkinter.CTkScrollableFrame):
 
     def create_str(self, tab, data, row):
         """Создание строки с данными об устройстве."""
+
         def run_vnc_exe(ip_address):
             """Запуск VNC"""
             subprocess.run(["resources\\VNC.exe", ip_address])
@@ -306,30 +306,45 @@ class DownFrame(customtkinter.CTkScrollableFrame):
 
         for index, item in enumerate(data):
             if index < 6:
-                customtkinter.CTkLabel(master=tab, text=item, font=("Arial", 12)).grid(row=row + 2, column=index, padx=10, pady=10)
+                customtkinter.CTkLabel(master=tab, text=item, font=("Arial", 12)).grid(row=row + 2, column=index,
+                                                                                       padx=10, pady=10)
 
-        customtkinter.CTkButton(master=tab, text="Описание", width=85, command=lambda: self.description_open(data_with_id[0])).grid(row=row + 2, column=6, pady=10,
-                                                                                                                                    padx=10)
-
-        customtkinter.CTkButton(master=tab, text="Фото", width=75, command=lambda: self.photo_open(data_with_id[0])).grid(row=row + 2, column=7, pady=10, padx=10)
-
-        customtkinter.CTkButton(master=tab, text="VNC", width=55, command=lambda: threading.Thread(target=run_vnc_exe, args=(data[0],)).start()).grid(row=row + 2,
-                                                                                                                                                      column=10,
-                                                                                                                                                      pady=10,
-                                                                                                                                                      padx=10)
+        customtkinter.CTkButton(master=tab, text="Описание", width=85,
+                                command=lambda: self.description_open(data_with_id[0])).grid(row=row + 2, column=6,
+                                                                                             pady=10, padx=10)
+        customtkinter.CTkButton(master=tab, text="Фото", width=75,
+                                command=lambda: self.photo_open(data_with_id[0])).grid(row=row + 2, column=7, pady=10,
+                                                                                       padx=10)
+        customtkinter.CTkButton(master=tab, text="VNC", width=55,
+                                command=lambda: threading.Thread(target=run_vnc_exe, args=(data[0],)).start()).grid(
+            row=row + 2, column=10, pady=10, padx=10)
 
         image_path = os.path.join(os.path.dirname(os.path.realpath(__file__)))
-        customtkinter.CTkButton(master=tab, text="", image=customtkinter.CTkImage(Image.open(os.path.join(image_path, "resources\\edit_ico.png")), size=(20, 20)),
-                                width=30, command=lambda: self.edit_pc(data_with_id[0])).grid(row=row + 2, column=11, pady=10, padx=10)
+        customtkinter.CTkButton(master=tab, text="", image=customtkinter.CTkImage(
+            Image.open(os.path.join(image_path, "resources\\edit_ico.png")), size=(20, 20)), width=30,
+                                command=lambda: self.edit_pc(data_with_id[0])).grid(row=row + 2, column=11, pady=10,
+                                                                                    padx=10)
 
-        if data[8] == None:
-            customtkinter.CTkLabel(master=tab, text="-------", ).grid(row=row + 2, column=9, padx=10, pady=10)
-        if data[6] == 0:
-            customtkinter.CTkLabel(master=tab, text="          ", bg_color="red").grid(row=row + 2, column=8, padx=10, pady=10)
+        if data[8] is None:
+            customtkinter.CTkLabel(master=tab, text="-------").grid(row=row + 2, column=9, padx=10, pady=10)
         else:
-            customtkinter.CTkLabel(master=tab, text="          ", bg_color="green").grid(row=row + 2, column=8, padx=10, pady=10)
-        customtkinter.CTkLabel(master=tab, text=data[8], font=("Arial", 12)).grid(row=row + 2, column=9, padx=10, pady=10)
+            try:
+                date_str = data[8]
+                date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+                formatted_date = date_obj.strftime("%d.%m.%Y")
+            except Exception as e:
+                print(f"Ошибка при преобразовании даты: {e}")
+                formatted_date = date_str  # На случай ошибки, оставим исходную дату
 
+            customtkinter.CTkLabel(master=tab, text=formatted_date, font=("Arial", 12)).grid(row=row + 2, column=9,
+                                                                                             padx=10, pady=10)
+
+        if data[6] == 0:
+            customtkinter.CTkLabel(master=tab, text="          ", bg_color="red").grid(row=row + 2, column=8, padx=10,
+                                                                                       pady=10)
+        else:
+            customtkinter.CTkLabel(master=tab, text="          ", bg_color="green").grid(row=row + 2, column=8, padx=10,
+                                                                                         pady=10)
     def clear_frame(self):
         """Удаление всех виджетов из фрейма."""
         # Уничтожаем все дочерние виджеты фрейма
@@ -374,8 +389,13 @@ class FrameConn(customtkinter.CTkFrame):
         self.entry2.grid(row=1, column=1, padx=10, pady=5)
 
         self.button = customtkinter.CTkButton(self, text="Принять", command=self.handle_button_click)
-        self.button.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
+        self.button.grid(row=2, column=1,  padx=10, pady=5)
 
+        customtkinter.CTkButton(self, text="Справка", command=self.open_help).grid(row=2, column=0,  padx=10, pady=5)
+
+    def open_help(self):
+        """Открывает файл справки"""
+        os.startfile("resources\\Справочная система приложения.pdf")
     def handle_button_click(self):
         # Получаем введенные значения
         server_name = self.entry1.get()

@@ -33,14 +33,14 @@ class DatabaseManager:
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[branch_office]') AND type in (N'U'))
                                 CREATE TABLE branch_office (
                                     id INT PRIMARY KEY IDENTITY(1,1),
-                                    name NVARCHAR(255) UNIQUE NOT NULL
+                                    name NVARCHAR(50) UNIQUE NOT NULL
                                 )''')
 
             # Создание таблицы structural_unit
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[structural_unit]') AND type in (N'U'))
                                 CREATE TABLE structural_unit (
                                     id INT PRIMARY KEY IDENTITY(1,1),
-                                    name NVARCHAR(255) UNIQUE NOT NULL
+                                    name NVARCHAR(50) UNIQUE NOT NULL
                                 )''')
 
             # Создание таблицы branch_structural_unit
@@ -57,40 +57,40 @@ class DatabaseManager:
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[type_of_device]') AND type in (N'U'))
                                             CREATE TABLE type_of_device (
                                                 id INT PRIMARY KEY IDENTITY(1,1),
-                                                name NVARCHAR(255) UNIQUE NOT NULL
+                                                name NVARCHAR(50) UNIQUE NOT NULL
                                             )''')
 
             # Создание таблицы place_of_installation
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[place_of_installation]') AND type in (N'U'))
                                                         CREATE TABLE place_of_installation (
                                                             id INT PRIMARY KEY IDENTITY(1,1),
-                                                            name NVARCHAR(255) UNIQUE NOT NULL
+                                                            name NVARCHAR(50) UNIQUE NOT NULL
                                                         )''')
             # Создание таблицы material_resp_person
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[material_resp_person]') AND type in (N'U'))
                                                                     CREATE TABLE material_resp_person (
                                                                         id INT PRIMARY KEY IDENTITY(1,1),
-                                                                        name NVARCHAR(255) UNIQUE NOT NULL
+                                                                        name NVARCHAR(50) UNIQUE NOT NULL
                                                                     )''')
 
             # Создание таблицы component
             self.cur.execute('''IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[component]') AND type in (N'U'))
                                 CREATE TABLE component (
                                     id INT PRIMARY KEY IDENTITY(1,1),
-                                    processor NVARCHAR(MAX),
-                                    ram NVARCHAR(MAX),
-                                    motherboard NVARCHAR(MAX),
-                                    gpu NVARCHAR(MAX),
-                                    psu NVARCHAR(MAX),
-                                    networkCard NVARCHAR(MAX),
-                                    cooler NVARCHAR(MAX),
-                                    chasis NVARCHAR(MAX),
-                                    hdd NVARCHAR(MAX),
-                                    ssd NVARCHAR(MAX),
-                                    monitor NVARCHAR(MAX),
-                                    keyboard NVARCHAR(MAX),
-                                    mouse NVARCHAR(MAX),
-                                    audio NVARCHAR(MAX)
+                                    processor NVARCHAR(50),
+                                    ram NVARCHAR(50),
+                                    motherboard NVARCHAR(50),
+                                    gpu NVARCHAR(50),
+                                    psu NVARCHAR(50),
+                                    networkCard NVARCHAR(50),
+                                    cooler NVARCHAR(50),
+                                    chasis NVARCHAR(50),
+                                    hdd NVARCHAR(50),
+                                    ssd NVARCHAR(50),
+                                    monitor NVARCHAR(50),
+                                    keyboard NVARCHAR(50),
+                                    mouse NVARCHAR(50),
+                                    audio NVARCHAR(50)
                                 )''')
 
             # Создание таблицы detail_info
@@ -98,10 +98,10 @@ class DatabaseManager:
                                 CREATE TABLE detail_info (
                                     id INT PRIMARY KEY IDENTITY(1,1),
                                     component_id INT NOT NULL,
-                                    inventory_number NVARCHAR(MAX) NOT NULL,
-                                    serial_number NVARCHAR(MAX) NOT NULL,
-                                    mac_address NVARCHAR(MAX) NOT NULL,
-                                    oper_system NVARCHAR(MAX) NOT NULL,
+                                    inventory_number NVARCHAR(50) NOT NULL,
+                                    serial_number NVARCHAR(50) NOT NULL,
+                                    mac_address NVARCHAR(50) NOT NULL,
+                                    oper_system NVARCHAR(50) NOT NULL,
                                     year_of_purchase INT NOT NULL,
                                     month_of_warranty INT NOT NULL,
                                     FOREIGN KEY(component_id) REFERENCES component(id) ON DELETE CASCADE ON UPDATE CASCADE
@@ -112,11 +112,11 @@ class DatabaseManager:
                                 CREATE TABLE basic_info (
                                     id INT PRIMARY KEY IDENTITY(1,1),
                                     ip NVARCHAR(15) NOT NULL,
-                                    name NVARCHAR(MAX) NOT NULL,
-                                    network_name NVARCHAR(MAX) NOT NULL,
+                                    name NVARCHAR(50) NOT NULL,
+                                    network_name NVARCHAR(50) NOT NULL,
                                     type_of_device_id INT NOT NULL,
                                     place_of_installation_id INT NOT NULL,
-                                    description NVARCHAR(MAX)NOT NULL,
+                                    description NVARCHAR(150)NOT NULL,
                                     material_resp_person_id INT NOT NULL,
                                     last_status BIT,
                                     data_status datetime,
@@ -137,9 +137,9 @@ class DatabaseManager:
                                 CREATE TABLE repair (
                                     id INT PRIMARY KEY IDENTITY(1,1),
                                     basic_info_id INT NOT NULL,
-                                    description NVARCHAR(100) NOT NULL,
+                                    description NVARCHAR(50) NOT NULL,
                                     repair_date DATE NOT NULL,
-                                    document_path NVARCHAR(100),
+                                    document_path NVARCHAR(255),
                                     FOREIGN KEY(basic_info_id) REFERENCES basic_info(id) ON DELETE CASCADE ON UPDATE CASCADE
                                 )''')
 
@@ -148,7 +148,7 @@ class DatabaseManager:
                                 CREATE TABLE photo (
                                     id INT PRIMARY KEY IDENTITY(1,1),
                                     basic_info_id INT NOT NULL,
-                                    path NVARCHAR(MAX) NOT NULL,
+                                    path NVARCHAR(255) NOT NULL,
                                     FOREIGN KEY(basic_info_id) REFERENCES basic_info(id) ON DELETE CASCADE ON UPDATE CASCADE
                                 )''')
 
@@ -191,8 +191,8 @@ class DatabaseManager:
         try:
             procedure_query = """
                 CREATE PROCEDURE GetAllDevicesByUnit
-                    @branch_name NVARCHAR(MAX),
-                    @structural_unit_name NVARCHAR(MAX)
+                    @branch_name NVARCHAR(50),
+                    @structural_unit_name NVARCHAR(50)
                 AS
                 BEGIN
                     SELECT 
@@ -255,7 +255,7 @@ class DatabaseManager:
         try:
             procedure_query = """
                 CREATE PROCEDURE GetAllDevicesByBranch
-                @branch_name NVARCHAR(MAX)
+                @branch_name NVARCHAR(50)
             AS
             BEGIN
                 SELECT 
@@ -317,9 +317,9 @@ class DatabaseManager:
         try:
             procedure_query = """
             CREATE PROCEDURE GetDeviceInfoByBranchStrUnitPlaceOf
-                @branch NVARCHAR(255),
-                @unit NVARCHAR(255),
-                @place_of NVARCHAR(255)
+                @branch NVARCHAR(50),
+                @unit NVARCHAR(50),
+                @place_of NVARCHAR(50)
             AS
             BEGIN
                 SELECT
@@ -384,8 +384,8 @@ class DatabaseManager:
         try:
             procedure_query = """
                             CREATE PROCEDURE GetPlaceOfInstallationByBranchAndUnit
-                @branch_name NVARCHAR(MAX),
-                @structural_unit_name NVARCHAR(MAX)
+                @branch_name NVARCHAR(50),
+                @structural_unit_name NVARCHAR(50)
             AS
             BEGIN
                 SELECT DISTINCT
@@ -421,11 +421,11 @@ class DatabaseManager:
         try:
             procedure_query = """
             CREATE PROCEDURE GetDeviceInfoByBranchStrUnitTypeOfDeviceIpNetworkName
-                @branch NVARCHAR(255),
-                @unit NVARCHAR(255),
-                @type_of_device NVARCHAR(255),
-                @ip NVARCHAR(255),
-                @network_name NVARCHAR(255)
+                @branch NVARCHAR(50),
+                @unit NVARCHAR(50),
+                @type_of_device NVARCHAR(50),
+                @ip NVARCHAR(50),
+                @network_name NVARCHAR(50)
             AS
             BEGIN
                 SELECT
@@ -530,7 +530,7 @@ class DatabaseManager:
         """
         try:
             procedure_query = """
-                CREATE PROCEDURE GetStructuralUnits @branchOfficeName NVARCHAR(255)
+                CREATE PROCEDURE GetStructuralUnits @branchOfficeName NVARCHAR(50)
                 AS
                 BEGIN
                     DECLARE @branchOfficeId INT
@@ -602,8 +602,8 @@ class DatabaseManager:
                             CREATE PROCEDURE GetBasicInfoStatusBetweenDatesInBranchAndStructUnit
                     @date_start DATE,
                     @date_end DATE,
-                    @branch NVARCHAR(100),
-                    @st_unit NVARCHAR(100)
+                    @branch NVARCHAR(50),
+                    @st_unit NVARCHAR(50)
                 AS
                 BEGIN
                     SELECT B.name AS basic_info_name,
@@ -641,8 +641,8 @@ class DatabaseManager:
                             CREATE PROCEDURE GetRepairsBetweenTwoDates
                     @date_start DATE,
                     @date_end DATE,
-                    @branch NVARCHAR(100),
-                    @st_unit NVARCHAR(100)
+                    @branch NVARCHAR(50),
+                    @st_unit NVARCHAR(50)
                 AS
                 BEGIN
                     SET NOCOUNT ON;
@@ -735,7 +735,11 @@ END
                     
                         -- Обновляем значение поля last_repair в таблице basic_info для каждой вставленной записи в repair
                         UPDATE basic_info
-                        SET last_repair = i.repair_date
+                        SET last_repair = (
+                            SELECT MAX(r.repair_date)
+                            FROM repair r
+                            WHERE r.basic_info_id = b.id
+                        )
                         FROM basic_info b
                         INNER JOIN inserted i ON b.id = i.basic_info_id;
                     END;

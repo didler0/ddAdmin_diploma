@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import tkinter
 import shutil
@@ -110,7 +111,7 @@ class SecondFrame(customtkinter.CTkFrame):
         CTkToolTip(self.DecriptiontextBox, message="Введите описание")
 
         customtkinter.CTkLabel(master=self, text="Дата ремонта").grid(row=3, column=0, padx=10, pady=10, sticky="ew")
-        self.DataOfRepaor_entry = customtkinter.CTkEntry(master=self, placeholder_text="ГГГГ-ММ-ДД")
+        self.DataOfRepaor_entry = customtkinter.CTkEntry(master=self, placeholder_text="ДД-ММ-ГГГГ")
         self.DataOfRepaor_entry.grid(row=3, column=1, padx=10, pady=10, sticky="ew")
         CTkToolTip(self.DataOfRepaor_entry, message="Введите дату ремонта")
 
@@ -120,7 +121,7 @@ class SecondFrame(customtkinter.CTkFrame):
         self.CalendarOpenButton.grid(row=3, column=2, pady=5, padx=10, sticky="ew")
         CTkToolTip(self.CalendarOpenButton, message="Открыть окно для выбора даты")
 
-        customtkinter.CTkLabel(master=self, text="Открыть папку с документами к выбранному ремонту.").grid(row=4, columnspan=2, column=0, padx=10, pady=10, sticky="ew")
+        customtkinter.CTkLabel(master=self, text="Открыть папку с документами к выбранному ремонту:").grid(row=4, columnspan=2, column=0, padx=10, pady=10, sticky="ew")
         self.OpenFolderRepairButton = customtkinter.CTkButton(master=self, text="Открыть папку", command=lambda: self.open_folder())
         self.OpenFolderRepairButton.grid(row=4, column=2, pady=5, padx=10, sticky="ew")
         CTkToolTip(self.OpenFolderRepairButton, message="Открыть папку с документами к выбранному ремонту.")
@@ -167,15 +168,17 @@ class SecondFrame(customtkinter.CTkFrame):
                 """
         self.clear_whole_data()
         parts = choice.split('|')
-        repair_id = [part.strip() for part in parts]
-        repair_id = repair_id[0]
+        repair_id = [part.strip() for part in parts][0]
         data = self.db_manager.get_data("repair", "*", f"id = {repair_id}")
-        data_for_inset = list()
-        for text in data[0]:
-            data_for_inset.append(text)
+        data_for_inset = list(data[0])
+
+        # Преобразование даты из формата "YYYY-MM-DD" в формат "DD.MM.YYYY"
+        date_str = data_for_inset[3]
+        date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+        formatted_date = date_obj.strftime("%d.%m.%Y")
 
         self.DecriptiontextBox.insert(tkinter.END, data_for_inset[2])
-        self.DataOfRepaor_entry.insert(0, data_for_inset[3])
+        self.DataOfRepaor_entry.insert(0, formatted_date)
 
 
 
@@ -201,7 +204,7 @@ class SecondFrame(customtkinter.CTkFrame):
             self.additionalWIN.title(f"Calendar")
             self.additionalWIN.focus()
             maximize_minimize_button.hide(self.additionalWIN)
-            cal = Calendar(self.additionalWIN, selectmode='day', date_pattern="yyyy-mm-dd")
+            cal = Calendar(self.additionalWIN, selectmode='day', date_pattern="dd.mm.yyyy")
 
             def set_date():
                 """
@@ -311,7 +314,10 @@ class FirstFrame(customtkinter.CTkFrame):
             print(all_repairs)
             str_data_combobox1_repair = list()
             for data in all_repairs:
-                str_data_combobox1_repair.append(f"{data[0]} | {data[3]}")
+                date_str = data[3]
+                date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                formatted_date = date_obj.strftime("%d.%m.%Y")
+                str_data_combobox1_repair.append(f"{data[0]} | {formatted_date}")
             self.FillComboBox(self.secondFrameInstance.combobox1_repair, str_data_combobox1_repair)
 
             if not all_repairs:
