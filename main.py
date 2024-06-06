@@ -32,10 +32,10 @@ customtkinter.set_default_color_theme("blue")
 class UpperFrame(customtkinter.CTkFrame):
     """Класс для верхнего фрейма, содержащего кнопки и функциональность"""
 
-    def __init__(self, master):
+    def __init__(self, master,db_manager=None):
         """Инициализация верхнего фрейма"""
         super().__init__(master)
-
+        self.db_manager=db_manager
         self.toplevel_window = None  # Переменная для хранения ссылки на верхнеуровневое окно
 
         # Список с информацией о кнопках
@@ -165,7 +165,8 @@ class MiddleFrame(customtkinter.CTkFrame):
             unique_cabinets.add(row[5])  # Добавляем номер кабинета в множество
         unique_cabinets = sorted(unique_cabinets)
         self.tabview = customtkinter.CTkTabview(master=self.DownFrame)
-        self.tabview.grid(row=0, column=0)
+        customtkinter.CTkLabel(master=self.DownFrame, text="Место установки").grid(row=0, column=0)
+        self.tabview.grid(row=1, column=0)
         self.tabs = list()
 
         for cabinet_number in unique_cabinets:
@@ -284,6 +285,7 @@ class DownFrame(customtkinter.CTkScrollableFrame):
         self.db_manager = db_manager
         self.toplevel_window = None
         self.grid_columnconfigure(0, weight=1)
+
     def create_lables(self, tab):
         """Создание меток для отображения заголовков столбцов."""
         labels_text = ["Ip", "Название", "Название в сети", "Тип устройства", "Место установки", "Мат. отв.", "Описание", "Фото",
@@ -361,12 +363,12 @@ class FrameConn(customtkinter.CTkFrame):
         super().__init__(*args, **kwargs)
         self.meth=method
         # Создаем лейблы и привязываем их к соответствующим полям ввода
-        label1 = customtkinter.CTkLabel(self, text="Server Name:")
+        label1 = customtkinter.CTkLabel(self, text="Имя сервера:")
         label1.grid(row=0, column=0, padx=10, pady=5, sticky="w")
         self.entry1 = customtkinter.CTkEntry(self, placeholder_text="Введите Server Name")
         self.entry1.grid(row=0, column=1, padx=10, pady=5)
 
-        label2 = customtkinter.CTkLabel(self, text="Database Name:")
+        label2 = customtkinter.CTkLabel(self, text="Имя базы данных:")
         label2.grid(row=1, column=0, padx=10, pady=5, sticky="w")
         self.entry2 = customtkinter.CTkEntry(self, placeholder_text="Введите Database Name")
         self.entry2.grid(row=1, column=1, padx=10, pady=5)
@@ -468,12 +470,12 @@ class App(customtkinter.CTk):
             self.frame_middle = MiddleFrame(self, self.frame_down, db_manager =self.db_manager)
             self.frame_middle.grid(row=1, column=0, padx=10, pady=10)
 
-            self.frame_up = UpperFrame(self)
+            self.frame_up = UpperFrame(self,self.db_manager)
             self.frame_up.grid(row=0, column=0, padx=10, pady=10)
 
     def on_closing(self):
         """Обработчик события закрытия приложения."""
-        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+        if messagebox.askokcancel("Выйти", "Вы хотите закрыть приложение?"):
             if self.db_manager is not None and self.db_manager.conn is not None:
                 self.db_manager.close_connection()  # Закрываем соединение с базой данных
             self.destroy()
